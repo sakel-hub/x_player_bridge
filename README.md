@@ -3,7 +3,7 @@
 [![ContentDB](https://content.luanti.org/packages/SaKeL/x_player_bridge/shields/title/)](https://content.luanti.org/packages/SaKeL/x_player_bridge/)
 [![ContentDB Downloads](https://content.luanti.org/packages/SaKeL/x_player_bridge/shields/downloads/)](https://content.luanti.org/packages/SaKeL/x_player_bridge/)
 [![License: LGPL 2.1](https://img.shields.io/badge/License-LGPL_v2.1-blue.svg)](license.txt)
-[![Media License: CC-BY-SA 3.0](https://img.shields.io/badge/Media-CC_BY--SA_3.0-lightgrey.svg)](license.txt)
+[![Media License: CC-BY 4.0](https://img.shields.io/badge/Media-CC_BY_4.0-lightgrey.svg)](license.txt)
 
 Showcase bridge mod providing seamless integration between `x_player_api`'s dual-model visual architecture and popular player equipment, skin, and weapon mods such as `3d_armor`, `wieldview`, `skinsdb`, and `shields`.
 
@@ -129,4 +129,4 @@ Ensure `x_player_api` is installed and enabled in your world.
 ## License
 
 - **Code**: LGPL-2.1-or-later (see `license.txt`)
-- **Media & Models**: CC-BY-SA-3.0 (see `license.txt`)
+- **Media & Models**: CC-BY-4.0 (see `license.txt`)
