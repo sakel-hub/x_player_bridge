@@ -1,0 +1,12 @@
+# Enable 3D Armor integration (dual-model registration and texture interception)
+x_player_bridge.enable_3d_armor (Enable 3D Armor integration) bool true
+
+# Enable Wieldview integration (suppress duplicate 2D wieldview compositing)
+x_player_bridge.enable_wieldview (Enable Wieldview integration) bool true
+
+# Enable SkinsDB integration (model redirection from skinsdb mesh to dual model)
+x_player_bridge.enable_skinsdb (Enable SkinsDB integration) bool true
+
+# Enable Shields integration (shield blocking predicate registration)
+x_player_bridge.enable_shields (Enable Shields integration) bool true
+
