@@ -27,27 +27,31 @@ Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and si
 
 ## Supported Integrations
 
-### 1. 3D Armor (`3d_armor.lua`)
-When `3d_armor` is installed and `x_player_bridge.enable_3d_armor = true`:
-* Registers `3d_armor_character.b3d` as a dual-model definition (`mesh = "3d_armor_character.b3d"`, `mesh_glb = "3d_armor_character.glb"`).
-* Inherits all 28 character animation tracks, eye heights, and hitboxes directly from `character.b3d` via `base_model = "character.b3d"`.
-* Intercepts `armor:update_player_visuals` to ensure composited armor textures (helmet, chestplate, leggings, boots) are synchronized to both visual proxies without dropping multi-track animation states.
-* Synchronizes armor visuals automatically upon player reconnect.
+`x_player_bridge` organizes integrations into modular domains:
 
-### 2. Shields (`shields.lua`)
-When `shields` is installed and `x_player_bridge.enable_shields = true`:
-* Integrates shield defense mechanics into `x_player_api`'s action layer.
-* When a player raises a shield to guard against incoming attacks, triggers the upper-body `block` action animation seamlessly while locomotion continues on the legs.
+### Equipment
+* **3D Armor (`equipment/3d_armor.lua`)**: Registers `3d_armor_character.b3d` as a dual-model definition (`mesh = "3d_armor_character.b3d"`, `mesh_glb = "3d_armor_character.glb"`). Inherits character animation tracks, eye heights, and hitboxes directly from `character.b3d` via `base_model = "character.b3d"`. Intercepts `armor:update_player_visuals` to ensure composited armor textures (helmet, chestplate, leggings, boots) are synchronized to both visual proxies without dropping multi-track animation states.
+* **Shields (`equipment/shields.lua`)**: Integrates shield defense mechanics into `x_player_api`'s action layer. When a player raises a shield to guard against incoming attacks, triggers the upper-body `block` action animation seamlessly while locomotion continues on the legs.
 
-### 3. Wieldview (`wieldview.lua`)
-When `wieldview` is installed and `x_player_bridge.enable_wieldview = true`:
-* When `x_player_api.enable_wield_item = true`, automatically suppresses legacy 2D hand texture compositing on the player model to eliminate z-fighting, flickering, and duplicate rendered items.
-* Dynamically re-enables 2D compositing if 3D wield items are toggled off in settings.
+### Wield & Items
+* **Wieldview (`wield/wieldview.lua`)**: When `x_player_api.enable_wield_item = true`, automatically suppresses legacy 2D hand texture compositing on the player model to eliminate z-fighting, flickering, and duplicate rendered items. Dynamically re-enables 2D compositing if 3D wield items are toggled off in settings.
+* **Wield3D & Visible Wielditem (`wield/wield3d.lua`)**: Coordinates with external 3D wield item entities (`wield3d`, `visible_wielditem`), suppressing redundant external attachment entities when `x_player_api` native 3D wield items are active.
 
-### 4. SkinsDB (`skinsdb.lua`)
-When `skinsdb` is installed and `x_player_bridge.enable_skinsdb = true`:
-* Transparently registers a model redirect from `skinsdb_3d_armor_character_5.b3d` to `3d_armor_character.b3d`.
-* Ensures players selecting custom skins in SkinsDB receive high-fidelity glTF multi-track animations on modern clients and fallback single-timeline B3D animations on legacy clients.
+### Appearance & Skins
+* **SkinsDB (`appearance/skinsdb.lua`)**: Transparently registers model redirects from `skinsdb_3d_armor_character_5.b3d` to `3d_armor_character.b3d` and normalizes 4-slot texture arrays into the canonical 3-slot layout. Automatically composites 1.8 skin bodies, 1.0 textures, clothing overlays, and capes into Slot 1, directs armor textures strictly to Slot 2 (preventing armor in the hand), and blanks Slot 3 for clean 3D wield item rendering.
+* **Simple Skins (`appearance/simple_skins.lua`)**: Synchronizes selected character skins directly to both visual proxies upon player join and skin change.
+* **Clothing (`appearance/clothing.lua`)**: Preserves and composites wardrobe clothing layers across proxy entities.
+
+### Combat
+* **Bows (`combat/bows.lua`)**: Maps external bow drawing states into `x_player_api`'s `bow_aim` and `bow_shoot` action animations.
+
+### Locomotion
+* **Stamina (`locomotion/stamina.lua`)**: Maps sprinting mechanics into `x_player_api`'s `sprint` animation state.
+* **Hangglider (`locomotion/hangglider.lua`)**: Bridges glider deployment to the `glide` animation state and adjusts player visual pitch during flight.
+* **FlySwim Compat (`locomotion/flyswim_compat.lua`)**: Ensures crawl and swim animation states cooperate smoothly with 3D armor models.
+
+### Social
+* **Emote (`social/emote.lua`)**: Connects chat and button emote commands (`wave`, `point`, `cheer`, `cry`, etc.) to glTF multi-track gestures.
 
 ---
 
@@ -69,9 +73,17 @@ Each integration can be independently enabled or disabled via the in-game Settin
 | Setting | Type | Default | Description |
 |---|---|---|---|
 | `x_player_bridge.enable_3d_armor` | bool | `true` | Enable `3d_armor` dual-model registration and texture interception |
-| `x_player_bridge.enable_wieldview` | bool | `true` | Enable `wieldview` 2D compositing suppression hook |
-| `x_player_bridge.enable_skinsdb` | bool | `true` | Enable `skinsdb` model redirect to dual-model character |
 | `x_player_bridge.enable_shields` | bool | `true` | Enable `shields` defensive blocking action mapping |
+| `x_player_bridge.enable_wieldview` | bool | `true` | Enable `wieldview` 2D compositing suppression hook |
+| `x_player_bridge.enable_wield3d` | bool | `true` | Enable `wield3d` and `visible_wielditem` external entity suppression |
+| `x_player_bridge.enable_skinsdb` | bool | `true` | Enable `skinsdb` model redirect to dual-model character |
+| `x_player_bridge.enable_simple_skins` | bool | `true` | Enable `simple_skins` proxy texture synchronization |
+| `x_player_bridge.enable_clothing` | bool | `true` | Enable `clothing` proxy layer synchronization |
+| `x_player_bridge.enable_bows` | bool | `true` | Enable `bows` aiming and shooting animation mapping |
+| `x_player_bridge.enable_stamina` | bool | `true` | Enable `stamina` sprinting animation integration |
+| `x_player_bridge.enable_hangglider` | bool | `true` | Enable `hangglider` gliding flight state integration |
+| `x_player_bridge.enable_flyswim_compat` | bool | `true` | Enable swim and crawl animation compatibility |
+| `x_player_bridge.enable_emote` | bool | `true` | Enable `emote` gesture trigger integration |
 
 Example `luanti.conf`:
 ```conf
