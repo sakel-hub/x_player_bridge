@@ -1,0 +1,20 @@
+{
+    "$schema": "https://content.luanti.org/api/cdb_schema/",
+    "type": "MOD",
+    "title": "X Player Bridge",
+    "name": "x_player_bridge",
+    "short_description": "Ecosystem bridge integrating x_player_api's dual-format character models with 3d_armor, skinsdb, shields, and wieldview.",
+    "long_description": "An ecosystem integration bridge that seamlessly connects `x_player_api`'s next-generation dual-model visual architecture (`.glb` multi-track and `.b3d` single-timeline fallbacks) with popular player equipment, skin, and weapon mods in Luanti.\n\n## Features\n\n- **3D Armor Integration (`3d_armor`)**: Bundles `3d_armor_character.glb` and `3d_armor_character.b3d` with full armor UV layout support. Automatically synchronizes composited armor texture layers and helmet/chest/leggings/boots visuals across dual visual proxy entities while preserving multi-track glTF animations.\n- **Locked-Foot Bow Animation**: `3d_armor_character.glb` features an athletic courtly bow animation where the upper torso bends respectfully while the feet stay firmly planted on the ground without sliding.\n- **Shields Integration (`shields`)**: Bridges shield equip events and active blocking guard postures (`block`) into `x_player_api`'s action layer when defending against incoming attacks.\n- **Wieldview Optimization (`wieldview`)**: Dynamically toggles 2D hand texture compositing to prevent duplicate items or z-fighting when `x_player_api`'s native 3D wield items are enabled.\n- **SkinsDB Redirection (`skinsdb`)**: Provides transparent model redirection from `skinsdb_3d_armor_character_5.b3d` to the dual-format character models without monkey-patching core functions.\n- **Modular & Granular Toggles**: Each integration module can be individually enabled or disabled via `settingtypes.txt` or `luanti.conf`.\n\n## Quick Setup\n\nSimply install and enable `x_player_bridge` alongside `x_player_api` and any supported mod (`3d_armor`, `skinsdb`, `shields`, `wieldview`). The bridge automatically detects active mods at startup and activates the corresponding handlers.\n",
+    "dev_state": "ACTIVELY_DEVELOPED",
+    "tags": [
+        "library",
+        "equipment",
+        "skins",
+        "tools"
+    ],
+    "license": "LGPL-2.1-or-later",
+    "media_license": "CC-BY-SA-3.0",
+    "repo": "https://github.com/sakel-hub/x_player_bridge",
+    "issue_tracker": "https://github.com/sakel-hub/x_player_bridge/issues",
+    "website": "https://github.com/sakel-hub/x_player_bridge#readme"
+}
