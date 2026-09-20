@@ -6,6 +6,13 @@ globals = {
 	"x_player_bridge",
 	"armor",
 	"wieldview",
+	"wield3d",
+	"visible_wielditem",
+	"skins",
+	"stamina",
+	"hangglider",
+	"emote",
+	"bows",
 }
 read_globals = {
 	"ItemStack",
