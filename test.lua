@@ -38,6 +38,7 @@ describe("x_player_bridge Modular Architecture", function()
 			update_wielded_item = function() end,
 			get_item_texture = function() return "item.png" end,
 		})
+		rawset(_G, "x_player_bridge", nil)
 	end
 
 	it("loads 3d_armor integration when enabled and mod is present", function()
@@ -71,8 +72,13 @@ describe("x_player_bridge Modular Architecture", function()
 			received_self = s
 			received_player = p
 		end
-		-- Re-wrap with 3d_armor.lua hook
-		dofile("3d_armor.lua")
+		-- Re-wrap with 3d_armor module hook
+		dofile("modules/equipment/3d_armor.lua")
+		local mod_def = x_player_bridge.registered_modules["3d_armor"]
+		if mod_def then
+			mod_def:init()
+			x_player_bridge.active_modules["3d_armor"] = mod_def
+		end
 		for _, fn in ipairs(core._on_mods_loaded or {}) do fn() end
 
 		player_api.set_model(player, "character.b3d")
@@ -210,6 +216,99 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.equal("3d_armor_character.b3d", legacy_resolved)
 		assert.equal("3d_armor_character.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.glb"))
 		assert.equal("3d_armor_character.b3d", player_api.resolve_model("skinsdb_3d_armor_character.glb"))
+
+		-- Test 1.8 skin normalization (blank.png on slot 1, skin on slot 2, armor on slot 3, wield on slot 4)
+		local player = mock_env.join_player("SkinsUser")
+		x_player_api.set_model(player, "3d_armor_character.b3d")
+		x_player_api.enable_wield_item = true
+
+		player_api.set_textures(player, {
+			"blank.png",
+			"character_steve18.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+
+		local textures = player_api.get_textures(player)
+		assert.equal("character_steve18.png", textures[1])
+		assert.equal("3d_armor_chestplate.png", textures[2])
+		assert.equal("blank.png", textures[3]) -- Wield slot is blanked for 3D wield items, NEVER armor!
+
+		-- Test 1.0 skin normalization (skin on slot 1, blank.png on slot 2)
+		player_api.set_textures(player, {
+			"character_alex10.png",
+			"blank.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+
+		local tex10 = player_api.get_textures(player)
+		assert.equal("character_alex10.png", tex10[1])
+		assert.equal("3d_armor_chestplate.png", tex10[2])
+		assert.equal("blank.png", tex10[3])
+
+		-- Test composite 1.8 skin with cape on slot 1
+		player_api.set_textures(player, {
+			"clothing_cape.png",
+			"character_steve18.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local tex_cape = player_api.get_textures(player)
+		assert.equal("character_steve18.png^clothing_cape.png", tex_cape[1])
+		assert.equal("3d_armor_chestplate.png", tex_cape[2])
+		assert.equal("blank.png", tex_cape[3])
+
+		-- Test composite 1.0 skin with clothing overlay on slot 2
+		player_api.set_textures(player, {
+			"character_alex10.png",
+			"clothing_shirt.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local tex_shirt = player_api.get_textures(player)
+		assert.equal("character_alex10.png^clothing_shirt.png", tex_shirt[1])
+		assert.equal("3d_armor_chestplate.png", tex_shirt[2])
+		assert.equal("blank.png", tex_shirt[3])
+
+		-- Test 2D wield item preservation when enable_wield_item is false
+		x_player_api.enable_wield_item = false
+		player_api.set_textures(player, {
+			"blank.png",
+			"character_steve18.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local tex_2d = player_api.get_textures(player)
+		assert.equal("character_steve18.png", tex_2d[1])
+		assert.equal("3d_armor_chestplate.png", tex_2d[2])
+		assert.equal("wieldview_sword.png", tex_2d[3])
+		x_player_api.enable_wield_item = true
+
+		-- Test 1-slot model normalization (e.g. character.b3d)
+		x_player_api.set_model(player, "character.b3d")
+		player_api.set_textures(player, {
+			"blank.png",
+			"character_steve18.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local tex_single = player_api.get_textures(player)
+		assert.equal(1, #tex_single)
+		assert.equal("character_steve18.png", tex_single[1])
+	end)
+
+	it("redirects skinsdb models to character.b3d when 3d_armor is not loaded", function()
+		reset_bridge_env()
+		core._enabled_mods["3d_armor"] = nil
+		core._enabled_mods["skinsdb"] = true
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_skinsdb)
+		assert.equal("character.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.b3d"))
+		assert.equal("character.b3d", player_api.resolve_model("skinsdb_3d_armor_character.b3d"))
+		assert.equal("character.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.glb"))
 	end)
 
 	it("skips skinsdb integration when setting is disabled", function()
@@ -267,6 +366,187 @@ describe("x_player_bridge Modular Architecture", function()
 		dofile("init.lua")
 
 		assert.is_false(x_player_bridge.config.enable_shields)
+	end)
+
+	it("registers, orders, and queries modules in x_player_bridge registry", function()
+		reset_bridge_env()
+		dofile("init.lua")
+
+		assert.is_not_nil(x_player_bridge.modules)
+		assert.is_not_nil(x_player_bridge.register_module)
+		assert.is_not_nil(x_player_bridge.get_module)
+
+		-- Verify default modules are registered
+		assert.is_not_nil(x_player_bridge.get_module("3d_armor"))
+		assert.is_not_nil(x_player_bridge.get_module("wieldview"))
+		assert.is_not_nil(x_player_bridge.get_module("skinsdb"))
+		assert.is_not_nil(x_player_bridge.get_module("shields"))
+		assert.is_not_nil(x_player_bridge.get_module("simple_skins"))
+		assert.is_not_nil(x_player_bridge.get_module("clothing"))
+		assert.is_not_nil(x_player_bridge.get_module("wield3d"))
+		assert.is_not_nil(x_player_bridge.get_module("bows"))
+		assert.is_not_nil(x_player_bridge.get_module("stamina"))
+		assert.is_not_nil(x_player_bridge.get_module("hangglider"))
+		assert.is_not_nil(x_player_bridge.get_module("flyswim_compat"))
+		assert.is_not_nil(x_player_bridge.get_module("emote"))
+
+		-- Test registering a custom module
+		local custom_inited = false
+		local registered = x_player_bridge.register_module({
+			id = "test_module",
+			description = "Test Module",
+			priority = 10,
+			init = function()
+				custom_inited = true
+				return true
+			end,
+		})
+		assert.is_true(registered)
+		assert.is_not_nil(x_player_bridge.get_module("test_module"))
+		x_player_bridge.init_modules()
+		assert.is_true(custom_inited)
+
+		-- Test duplicate registration prevention
+		local dup = x_player_bridge.register_module({ id = "test_module" })
+		assert.is_false(dup)
+	end)
+
+	it("integrates wield3d and suppresses external entity updates when native 3D wield items are enabled", function()
+		reset_bridge_env()
+		core._enabled_mods["wield3d"] = true
+
+		local updated_entity = false
+		rawset(_G, "wield3d", {
+			update_entity = function(_player)
+				updated_entity = true
+			end,
+		})
+
+		player_api.enable_wield_item = true
+		dofile("init.lua")
+		for _, fn in ipairs(core._on_mods_loaded or {}) do fn() end
+
+		assert.is_true(x_player_bridge.config.enable_wield3d)
+		local player = mock_env.create_player("Wielder")
+
+		-- Calling wield3d.update_entity while native 3D is active should be suppressed
+		wield3d.update_entity(player)
+		assert.is_false(updated_entity)
+
+		-- Disabling native 3D should restore external update
+		player_api.set_wield_item_enabled(false)
+		wield3d.update_entity(player)
+		assert.is_true(updated_entity)
+	end)
+
+	it("integrates simple_skins and synchronizes proxy textures on join", function()
+		reset_bridge_env()
+		core._enabled_mods["simple_skins"] = true
+
+		rawset(_G, "skins", {
+			skins = { ["SkinUser"] = "character_1" },
+			get_skin_texture = function(_self, _name)
+				return "character_1.png"
+			end,
+		})
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_simple_skins)
+		local player = mock_env.join_player("SkinUser")
+		assert.is_not_nil(player)
+	end)
+
+	it("integrates clothing mod and synchronizes composite wardrobe textures", function()
+		reset_bridge_env()
+		core._enabled_mods["clothing"] = true
+
+		rawset(_G, "clothing", {
+			player_textures = { ["Tailor"] = "clothing_shirt.png" },
+		})
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_clothing)
+		local player = mock_env.join_player("Tailor")
+		assert.is_not_nil(player)
+	end)
+
+	it("integrates external bows mod and registers aiming and shoot actions", function()
+		reset_bridge_env()
+		core._enabled_mods["bows"] = true
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_bows)
+		local player = mock_env.join_player("Archer")
+		player.get_wielded_item = function()
+			return { get_name = function() return "bows:bow_wood" end }
+		end
+		player.get_player_control = function()
+			return { RMB = true }
+		end
+
+		local state = player_api.get_player_state(player)
+		assert.is_true(state.aiming_bow)
+		assert.equal("bow_aim", state.action)
+	end)
+
+	it("integrates stamina mod and maps sprint animation state", function()
+		reset_bridge_env()
+		core._enabled_mods["stamina"] = true
+
+		rawset(_G, "stamina", {
+			is_sprinting = function(player)
+				return player:get_player_name() == "Sprinter"
+			end,
+		})
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_stamina)
+		local player = mock_env.join_player("Sprinter")
+		player.get_player_control = function()
+			return { up = true }
+		end
+
+		local state = player_api.get_player_state(player)
+		assert.equal("sprint", state.locomotion)
+	end)
+
+	it("integrates hangglider mod and triggers glide animation state", function()
+		reset_bridge_env()
+		core._enabled_mods["hangglider"] = true
+
+		rawset(_G, "hangglider", {
+			gliding = { ["Pilot"] = true },
+		})
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_hangglider)
+		local player = mock_env.join_player("Pilot")
+
+		local state = player_api.get_player_state(player)
+		assert.is_true(state.gliding)
+	end)
+
+	it("integrates emote mod and maps emote gestures to x_player_api actions", function()
+		reset_bridge_env()
+		core._enabled_mods["emote"] = true
+
+		rawset(_G, "emote", {
+			action = function(_player, _anim) end,
+		})
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_emote)
+		local player = mock_env.join_player("Socialite")
+
+		emote.action(player, "wave")
+		local state = player_api.get_player_state(player)
+		assert.equal("wave", state.action)
 	end)
 
 	it("verifies 3d_armor_character.glb bow animation keeps Body translation locked and counter-rotates legs", function()
