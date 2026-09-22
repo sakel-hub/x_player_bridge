@@ -2,8 +2,10 @@
 
 [![ContentDB](https://content.luanti.org/packages/SaKeL/x_player_bridge/shields/title/)](https://content.luanti.org/packages/SaKeL/x_player_bridge/)
 [![ContentDB Downloads](https://content.luanti.org/packages/SaKeL/x_player_bridge/shields/downloads/)](https://content.luanti.org/packages/SaKeL/x_player_bridge/)
+![Luanti](https://img.shields.io/badge/Luanti-5.10%2B-5599ff.svg)
 [![License: LGPL 2.1](https://img.shields.io/badge/License-LGPL_v2.1-blue.svg)](license.txt)
 [![Media License: CC-BY 4.0](https://img.shields.io/badge/Media-CC_BY_4.0-lightgrey.svg)](license.txt)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/sakel-hub/x_player_bridge/pulls)
 
 Showcase bridge mod providing seamless integration between `x_player_api`'s dual-model visual architecture and popular player equipment, skin, and weapon mods such as `3d_armor`, `wieldview`, `skinsdb`, and `shields`.
 
@@ -62,7 +64,6 @@ Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and si
   - **Calibrated Bow Animation**: The `bow` animation track keeps pelvis root translation locked at `(0, 0, 0)` while counter-rotating leg bones by `+30°`. When bowing, the character's upper body bends respectfully while both feet remain firmly anchored to the floor without shifting, sliding, or hovering.
 - **`models/3d_armor_character.b3d`**: Legacy Blitz3D single-timeline model for older client compatibility.
 - **`assets/3d_armor_character.blend`**: Master Blender authoring file.
-- **`scripts/adjust_bow_animation.py`**: Automated headless Blender script used to export the locked-foot bow animation to glTF.
 
 ---
 
@@ -106,7 +107,13 @@ x_player_bridge.enable_shields = true
 
 `x_player_bridge` includes a modular BDD unit test suite verifying all bridge hooks, lifecycle events, and binary GLB animation curve constraints.
 
-To run the test suite:
+### Static Analysis
+```bash
+luacheck .
+```
+
+### Running Tests
+To run the automated test suite locally:
 ```bash
 lua test.lua
 ```
