@@ -332,6 +332,8 @@ def main():
     setup_material_texture("Character", skin_path)
 
     blank_path = os.path.join(base_dir, "textures", "blank.png")
+    if not os.path.exists(blank_path):
+        blank_path = os.path.join(mods_dir, "x_player_api", "textures", "blank.png")
 
     # Studio Lighting Setup
     for obj in list(scene.collection.objects):

@@ -17,10 +17,7 @@ https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 Licenses of media (models and assets)
 -------------------------------------
 
-Attribution 4.0 International (CC BY 4.0)
-
-`textures/blank.png`, `textures/3d_armor_trans.png`:
-Copyright (C) 2026 SaKeL (CC0 1.0 Universal / Public Domain)
+`textures/3d_armor_trans.png`: CC-BY-SA 3.0
 
 `models/3d_armor_character.b3d`, `models/3d_armor_character.glb`, `assets/3d_armor_character.blend`:
 Copyright (C) 2012 MirceaKitsune
