@@ -20,6 +20,11 @@ local function hook_3d_armor()
 			armor_obj = armor_mod
 		end
 
+		-- Ensure the model is forced to the dual model we registered before visuals update
+		if target_player then
+			x_player_api.set_model(target_player, "3d_armor_character.b3d")
+		end
+
 		-- If 3D wield items are active, ensure slot 3 (2D quad) remains blank to prevent duplicate rendering
 		if x_player_api.enable_wield_item and target_player then
 			local name = target_player:get_player_name()
@@ -31,7 +36,7 @@ local function hook_3d_armor()
 		-- Call original to handle setting player_api textures, which will route to proxies
 		old_update_player_visuals(armor_obj, target_player)
 
-		-- Ensure the model is forced to the dual model we registered
+		-- Ensure the model remains the dual model in case old_update_player_visuals altered it
 		if target_player then
 			x_player_api.set_model(target_player, "3d_armor_character.b3d")
 		end
@@ -85,5 +90,10 @@ x_player_bridge.register_module("3d_armor", {
 
 	on_joinplayer = function(_self, player)
 		core.after(0.2, sync_armor, player)
+		core.after(0.6, sync_armor, player)
+	end,
+
+	on_respawnplayer = function(_self, player)
+		core.after(0.1, sync_armor, player)
 	end,
 })
