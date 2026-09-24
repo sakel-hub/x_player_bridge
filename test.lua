@@ -641,6 +641,42 @@ describe("x_player_bridge Modular Architecture", function()
 		verify_leg_rot(leg_l_rot_ch, "Leg_Left")
 	end)
 
+	it("dispatches on_dieplayer and on_respawnplayer to active modules", function()
+		reset_bridge_env()
+		dofile("init.lua")
+
+		local died_called = false
+		local respawn_called = false
+		local test_player = mock_env.create_player("LifecycleHero")
+
+		x_player_bridge.register_module("lifecycle_test", {
+			description = "Test lifecycle hooks",
+			setting = "x_player_bridge.enable_lifecycle_test",
+			default_enabled = true,
+			priority = 50,
+			on_dieplayer = function(_self, p)
+				assert.equal(test_player, p)
+				died_called = true
+			end,
+			on_respawnplayer = function(_self, p)
+				assert.equal(test_player, p)
+				respawn_called = true
+			end,
+		})
+
+		x_player_bridge.init_modules()
+
+		for _, cb in ipairs(core._on_dieplayers) do
+			cb(test_player)
+		end
+		assert.is_true(died_called)
+
+		for _, cb in ipairs(core._on_respawnplayers) do
+			cb(test_player)
+		end
+		assert.is_true(respawn_called)
+	end)
+
 	-- Restore original environment
 	core.get_current_modname = orig_get_modname
 	core.get_modpath = orig_get_modpath

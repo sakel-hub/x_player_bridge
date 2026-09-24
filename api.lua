@@ -13,6 +13,8 @@
 ---@field init fun(self: BridgeModuleDefinition): boolean? Main initialization hook
 ---@field on_joinplayer? fun(self: BridgeModuleDefinition, player: ObjectRef) Player join hook
 ---@field on_leaveplayer? fun(self: BridgeModuleDefinition, player: ObjectRef) Player leave hook
+---@field on_dieplayer? fun(self: BridgeModuleDefinition, player: ObjectRef) Player death hook
+---@field on_respawnplayer? fun(self: BridgeModuleDefinition, player: ObjectRef) Player respawn hook
 
 ---Global namespace for x_player_bridge
 ---@class PlayerBridgeAPI
@@ -163,6 +165,30 @@ core.register_on_leaveplayer(function(player)
 	for _, mod_def in pairs(x_player_bridge.active_modules) do
 		if mod_def.on_leaveplayer then
 			mod_def:on_leaveplayer(player)
+		end
+	end
+end)
+
+---Lifecycle dispatch for player death
+core.register_on_dieplayer(function(player)
+	if not x_player_bridge or not x_player_bridge.active_modules then
+		return
+	end
+	for _, mod_def in pairs(x_player_bridge.active_modules) do
+		if mod_def.on_dieplayer then
+			mod_def:on_dieplayer(player)
+		end
+	end
+end)
+
+---Lifecycle dispatch for player respawn
+core.register_on_respawnplayer(function(player)
+	if not x_player_bridge or not x_player_bridge.active_modules then
+		return
+	end
+	for _, mod_def in pairs(x_player_bridge.active_modules) do
+		if mod_def.on_respawnplayer then
+			mod_def:on_respawnplayer(player)
 		end
 	end
 end)
