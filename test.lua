@@ -331,7 +331,7 @@ describe("x_player_bridge Modular Architecture", function()
 		core._enabled_mods["shields"] = true
 		core._enabled_mods["3d_armor"] = true
 
-		local player = mock_env.join_player("ShieldKnight")
+		local player = mock_env.create_player("ShieldKnight")
 		armor.get_weared_armor_elements = function(_self, p)
 			if p == player then
 				return {shield = "shields:shield_wood"}
