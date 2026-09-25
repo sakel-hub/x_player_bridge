@@ -11,6 +11,12 @@
 
 Showcase bridge mod providing seamless integration between `x_player_api`'s dual-model visual architecture and popular player equipment, skin, and weapon mods such as `3d_armor`, `wieldview`, `skinsdb`, and `shields`.
 
+> [!NOTE]
+> **Reference Implementation & Compatibility Showcase**  
+> `x_player_bridge` demonstrates how to leverage `x_player_api` to easily adapt various mods and achieve full compatibility with modern dual-format (`.glb` / `.b3d`) player visuals.  
+>  
+> The goal of this mod is **not** to permanently cover and inherit compatibility across all possible mods in the ecosystem. Instead, it serves as a modular reference showcase illustrating how other mod authors can implement direct `x_player_api` support and compatibility natively within their own mods.
+
 ![x_player_bridge Rig Animation Showcase](screenshot.png)
 
 ---
@@ -19,13 +25,14 @@ Showcase bridge mod providing seamless integration between `x_player_api`'s dual
 
 `x_player_api` introduces an innovative dual-model architecture serving modern glTF multi-track animations (`.glb`) to Luanti 5.17.0+ clients while seamlessly falling back to legacy single-timeline Blitz3D models (`.b3d`) for older clients on the same multiplayer server.
 
-Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and single-timeline animation ranges, `x_player_bridge` serves as an official integration layer that:
+Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and single-timeline animation ranges, `x_player_bridge` was created as an official reference showcase demonstrating how to bridge existing player-related mods to `x_player_api`. It shows mod authors that adopting `x_player_api` support in their own mods is straightforward, while providing ready-to-use integrations that:
 - **Preserves Multi-Track GLB Animations**: Prevents `3d_armor` and other visual mods from clobbering glTF named animation tracks and GPU bone blending on modern clients.
 - **Synchronizes Dual Visual Proxies**: Automatically mirrors composited armor layers, skins, and textures across both `x_player_api:visual_glb` and `x_player_api:visual_b3d` child entities.
 - **Includes Armor Character Models**: Bundles `3d_armor_character.glb` (with locked-feet bow animation) and `3d_armor_character.b3d` inside `models/` with canonical armor UV layout mapping.
 - **Prevents Render Conflicts**: Dynamically disables redundant 2D wieldview hand compositing when `x_player_api`'s native 3D wield items are active.
 - **Connects Combat Defenses**: Maps shield blocking mechanics (`shields` mod) into `x_player_api`'s upper-body defensive guard action (`block`).
 - **Supports Transparent Redirection**: Maps legacy model names (e.g. `skinsdb_3d_armor_character_5.b3d`) to registered dual-format definitions without monkey-patching core engine functions.
+- **Blueprint for Native Support**: Acts as a practical template for other mod authors to implement `x_player_api` support directly within their own repositories.
 
 ---
 
