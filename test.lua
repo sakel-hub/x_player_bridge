@@ -549,6 +549,63 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.equal("wave", state.action)
 	end)
 
+	it("integrates carts mod and preserves standing locomotion when riding cart", function()
+		reset_bridge_env()
+		core._enabled_mods["carts"] = true
+
+		core.registered_entities["carts:cart"] = {
+			name = "carts:cart",
+			railtype = 1,
+		}
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_carts)
+		assert.is_not_nil(x_player_bridge.is_player_in_cart)
+
+		local player = mock_env.join_player("Miner")
+		player_api.set_model(player, "character.glb")
+
+		-- Without cart attachment: standing initially
+		assert.is_false(x_player_bridge.is_player_in_cart(player))
+
+		-- Attach player to cart
+		local cart_obj = core.add_entity({x = 0, y = 0, z = 0}, "carts:cart")
+		player:set_attach(cart_obj, "", {x = 0, y = -4.5, z = 0}, {x = 0, y = 0, z = 0})
+		player_api.player_attached["Miner"] = true
+
+		assert.is_true(x_player_bridge.is_player_in_cart(player))
+
+		-- Locomotion state and animation must remain standing inside the cart
+		local state = player_api.get_player_state(player)
+		assert.equal("stand", state.locomotion)
+
+		player_api.globalstep(0.1)
+		assert.equal("stand", player_api.get_animation(player).animation)
+
+		-- Mining / swinging while standing in cart
+		player._controls = {dig = true, LMB = true, place = false, RMB = false}
+		player_api.controls.update_player_controls(player, 0.1)
+		local state_mining = player_api.get_player_state(player)
+		assert.equal("stand", state_mining.locomotion)
+		assert.equal("mine", state_mining.action)
+
+		-- Cleanup
+		player:set_detach()
+		player_api.player_attached["Miner"] = false
+		assert.is_false(x_player_bridge.is_player_in_cart(player))
+	end)
+
+	it("skips carts integration when setting is disabled", function()
+		reset_bridge_env()
+		core._enabled_mods["carts"] = true
+		core.settings:set_bool("x_player_bridge.enable_carts", false)
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_bridge.config.enable_carts)
+	end)
+
 	it("verifies 3d_armor_character.glb bow animation keeps Body translation locked and counter-rotates legs", function()
 		local f = io.open("models/3d_armor_character.glb", "rb")
 		assert.is_not_nil(f, "models/3d_armor_character.glb must be readable")

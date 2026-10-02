@@ -60,6 +60,7 @@ Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and si
 * **Stamina (`locomotion/stamina.lua`)**: Maps sprinting mechanics into `x_player_api`'s `sprint` animation state.
 * **Hangglider (`locomotion/hangglider.lua`)**: Bridges glider deployment to the `glide` animation state and adjusts player visual pitch during flight.
 * **FlySwim Compat (`locomotion/flyswim_compat.lua`)**: Ensures crawl and swim animation states cooperate smoothly with 3D armor models.
+* **Carts (`locomotion/carts.lua`)**: Preserves upright standing posture when riding in minecarts (`carts:cart`) and rail vehicles instead of forcing sitting animations.
 
 ### Social
 * **Emote (`social/emote.lua`)**: Connects chat and button emote commands (`wave`, `point`, `cheer`, `cry`, etc.) to glTF multi-track gestures.
@@ -93,6 +94,7 @@ Each integration can be independently enabled or disabled via the in-game Settin
 | `x_player_bridge.enable_stamina` | bool | `true` | Enable `stamina` sprinting animation integration |
 | `x_player_bridge.enable_hangglider` | bool | `true` | Enable `hangglider` gliding flight state integration |
 | `x_player_bridge.enable_flyswim_compat` | bool | `true` | Enable swim and crawl animation compatibility |
+| `x_player_bridge.enable_carts` | bool | `true` | Enable minecart standing posture integration |
 | `x_player_bridge.enable_emote` | bool | `true` | Enable `emote` gesture trigger integration |
 
 Example `luanti.conf`:
