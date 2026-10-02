@@ -28,10 +28,10 @@ Showcase bridge mod providing seamless integration between `x_player_api`'s dual
 Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and single-timeline animation ranges, `x_player_bridge` was created as an official reference showcase demonstrating how to bridge existing player-related mods to `x_player_api`. It shows mod authors that adopting `x_player_api` support in their own mods is straightforward, while providing ready-to-use integrations that:
 - **Preserves Multi-Track GLB Animations**: Prevents `3d_armor` and other visual mods from clobbering glTF named animation tracks and GPU bone blending on modern clients.
 - **Synchronizes Dual Visual Proxies**: Automatically mirrors composited armor layers, skins, and textures across both `x_player_api:visual_glb` and `x_player_api:visual_b3d` child entities.
-- **Includes Armor Character Models**: Bundles `3d_armor_character.glb` (with locked-feet bow animation) and `3d_armor_character.b3d` inside `models/` with canonical armor UV layout mapping.
+- **Includes Armor & SkinsDB Character Models**: Bundles `3d_armor_character.glb` / `.b3d` and dedicated `skinsdb_3d_armor_character_5.glb` / `.b3d` dual-format models supporting 1.8 skin 3D outer layers (jackets, sleeves, pants) alongside canonical armor UV layout mapping.
 - **Prevents Render Conflicts**: Dynamically disables redundant 2D wieldview hand compositing when `x_player_api`'s native 3D wield items are active.
 - **Connects Combat Defenses**: Maps shield blocking mechanics (`shields` mod) into `x_player_api`'s upper-body defensive guard action (`block`).
-- **Supports Transparent Redirection**: Maps legacy model names (e.g. `skinsdb_3d_armor_character_5.b3d`) to registered dual-format definitions without monkey-patching core engine functions.
+- **Native 1.8 3D Custom Model**: Provides `skinsdb_3d_armor_character_5.b3d` and `skinsdb_3d_armor_character_5.glb` with all 29 athletic animations, preserving 4-slot textures without flattening 1.8 outer voxel layers.
 - **Blueprint for Native Support**: Acts as a practical template for other mod authors to implement `x_player_api` support directly within their own repositories.
 
 ---
@@ -49,7 +49,7 @@ Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and si
 * **Wield3D & Visible Wielditem (`wield/wield3d.lua`)**: Coordinates with external 3D wield item entities (`wield3d`, `visible_wielditem`), suppressing redundant external attachment entities when `x_player_api` native 3D wield items are active.
 
 ### Appearance & Skins
-* **SkinsDB (`appearance/skinsdb.lua`)**: Transparently registers model redirects from `skinsdb_3d_armor_character_5.b3d` to `3d_armor_character.b3d` and normalizes 4-slot texture arrays into the canonical 3-slot layout. Automatically composites 1.8 skin bodies, 1.0 textures, clothing overlays, and capes into Slot 1, directs armor textures strictly to Slot 2 (preventing armor in the hand), and blanks Slot 3 for clean 3D wield item rendering.
+* **SkinsDB (`appearance/skinsdb.lua`)**: Registers dedicated `skinsdb_3d_armor_character_5.b3d` and `skinsdb_3d_armor_character_5.glb` dual-format models with all 29 athletic animations from `x_player_api`. Fully supports modern 1.8 skins with 3D outer layers (jackets, sleeves, pants) alongside 1.0 skins, capes, clothing overlays, and 3D armor by preserving the native 4-slot texture architecture. When non-skinsdb models are used, seamlessly falls back to canonical 3-slot texture normalization.
 * **Simple Skins (`appearance/simple_skins.lua`)**: Synchronizes selected character skins directly to both visual proxies upon player join and skin change.
 * **Clothing (`appearance/clothing.lua`)**: Preserves and composites wardrobe clothing layers across proxy entities.
 
@@ -87,7 +87,7 @@ Each integration can be independently enabled or disabled via the in-game Settin
 | `x_player_bridge.enable_shields` | bool | `true` | Enable `shields` defensive blocking action mapping |
 | `x_player_bridge.enable_wieldview` | bool | `true` | Enable `wieldview` 2D compositing suppression hook |
 | `x_player_bridge.enable_wield3d` | bool | `true` | Enable `wield3d` and `visible_wielditem` external entity suppression |
-| `x_player_bridge.enable_skinsdb` | bool | `true` | Enable `skinsdb` model redirect to dual-model character |
+| `x_player_bridge.enable_skinsdb` | bool | `true` | Enable `skinsdb` 1.8 3D custom model and 4-slot texture integration |
 | `x_player_bridge.enable_simple_skins` | bool | `true` | Enable `simple_skins` proxy texture synchronization |
 | `x_player_bridge.enable_clothing` | bool | `true` | Enable `clothing` proxy layer synchronization |
 | `x_player_bridge.enable_bows` | bool | `true` | Enable `bows` aiming and shooting animation mapping |
@@ -134,7 +134,7 @@ lua test.lua
 - Player reconnect inventory and visual state restoration.
 - GLB mesh and multi-track animation retention when `3d_armor` registers before bridge.
 - Dynamic 2D wieldview compositing suppression when 3D wield items are active.
-- `skinsdb` model redirection and fallback handling.
+- `skinsdb` 1.8 3D custom dual-model registration and 4-slot texture preservation.
 - `shields` blocking predicate registration.
 - Disabling integrations via configuration settings.
 - Binary GLB curve evaluation confirming `3d_armor_character.glb` keeps `Body` translation locked to zero and counter-rotates legs during the bow animation.

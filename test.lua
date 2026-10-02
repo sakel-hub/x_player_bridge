@@ -211,15 +211,25 @@ describe("x_player_bridge Modular Architecture", function()
 
 		assert.is_true(x_player_bridge.config.enable_skinsdb)
 		local resolved = player_api.resolve_model("skinsdb_3d_armor_character_5.b3d")
-		assert.equal("3d_armor_character.b3d", resolved)
+		assert.equal("skinsdb_3d_armor_character_5.b3d", resolved)
 		local legacy_resolved = player_api.resolve_model("skinsdb_3d_armor_character.b3d")
-		assert.equal("3d_armor_character.b3d", legacy_resolved)
-		assert.equal("3d_armor_character.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.glb"))
-		assert.equal("3d_armor_character.b3d", player_api.resolve_model("skinsdb_3d_armor_character.glb"))
+		assert.equal("skinsdb_3d_armor_character_5.b3d", legacy_resolved)
+		assert.equal("skinsdb_3d_armor_character_5.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.glb"))
+		assert.equal("skinsdb_3d_armor_character_5.b3d", player_api.resolve_model("skinsdb_3d_armor_character.glb"))
 
-		-- Test 1.8 skin normalization (blank.png on slot 1, skin on slot 2, armor on slot 3, wield on slot 4)
+		-- Verify model registration schema and dual-model attributes
+		local skins_model = player_api.registered_models["skinsdb_3d_armor_character_5.b3d"]
+		assert.is_not_nil(skins_model)
+		assert.equal("skinsdb_3d_armor_character_5.b3d", skins_model.mesh)
+		assert.equal("skinsdb_3d_armor_character_5.glb", skins_model.mesh_glb)
+		assert.equal("character.b3d", skins_model.base_model)
+		assert.is_not_nil(skins_model.animations["walk"])
+		assert.is_not_nil(skins_model.animations_glb["walk"])
+		assert.equal(4, #skins_model.textures)
+
+		-- Test 1.8 skin 4-slot preservation on skinsdb_3d_armor_character_5.b3d
 		local player = mock_env.join_player("SkinsUser")
-		x_player_api.set_model(player, "3d_armor_character.b3d")
+		x_player_api.set_model(player, "skinsdb_3d_armor_character_5.b3d")
 		x_player_api.enable_wield_item = true
 
 		player_api.set_textures(player, {
@@ -230,9 +240,53 @@ describe("x_player_bridge Modular Architecture", function()
 		})
 
 		local textures = player_api.get_textures(player)
-		assert.equal("character_steve18.png", textures[1])
-		assert.equal("3d_armor_chestplate.png", textures[2])
-		assert.equal("blank.png", textures[3]) -- Wield slot is blanked for 3D wield items, NEVER armor!
+		assert.equal(4, #textures)
+		assert.equal("blank.png", textures[1])
+		assert.equal("character_steve18.png", textures[2])
+		assert.equal("3d_armor_chestplate.png", textures[3])
+		assert.equal("blank.png", textures[4]) -- Wield slot is blanked for 3D wield items
+
+		-- Test 1.0 skin 4-slot preservation
+		player_api.set_textures(player, {
+			"character_alex10.png",
+			"blank.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local tex10_4slot = player_api.get_textures(player)
+		assert.equal(4, #tex10_4slot)
+		assert.equal("character_alex10.png", tex10_4slot[1])
+		assert.equal("blank.png", tex10_4slot[2])
+		assert.equal("3d_armor_chestplate.png", tex10_4slot[3])
+		assert.equal("blank.png", tex10_4slot[4])
+
+		-- Test composite 1.8 skin with cape on slot 1
+		player_api.set_textures(player, {
+			"clothing_cape.png",
+			"character_steve18.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local tex_cape_4slot = player_api.get_textures(player)
+		assert.equal(4, #tex_cape_4slot)
+		assert.equal("clothing_cape.png", tex_cape_4slot[1])
+		assert.equal("character_steve18.png", tex_cape_4slot[2])
+		assert.equal("3d_armor_chestplate.png", tex_cape_4slot[3])
+
+		-- Test 3-slot fallback on 3d_armor_character.b3d
+		-- (blank.png on slot 1, skin on slot 2, armor on slot 3, wield on slot 4)
+		x_player_api.set_model(player, "3d_armor_character.b3d")
+		player_api.set_textures(player, {
+			"blank.png",
+			"character_steve18.png",
+			"3d_armor_chestplate.png",
+			"wieldview_sword.png",
+		})
+		local textures3 = player_api.get_textures(player)
+		assert.equal(3, #textures3)
+		assert.equal("character_steve18.png", textures3[1])
+		assert.equal("3d_armor_chestplate.png", textures3[2])
+		assert.equal("blank.png", textures3[3])
 
 		-- Test 1.0 skin normalization (skin on slot 1, blank.png on slot 2)
 		player_api.set_textures(player, {
@@ -298,7 +352,7 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.equal("character_steve18.png", tex_single[1])
 	end)
 
-	it("redirects skinsdb models to character.b3d when 3d_armor is not loaded", function()
+	it("registers skinsdb 1.8 model and aliases when 3d_armor is not loaded", function()
 		reset_bridge_env()
 		core._enabled_mods["3d_armor"] = nil
 		core._enabled_mods["skinsdb"] = true
@@ -306,9 +360,9 @@ describe("x_player_bridge Modular Architecture", function()
 		dofile("init.lua")
 
 		assert.is_true(x_player_bridge.config.enable_skinsdb)
-		assert.equal("character.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.b3d"))
-		assert.equal("character.b3d", player_api.resolve_model("skinsdb_3d_armor_character.b3d"))
-		assert.equal("character.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.glb"))
+		assert.equal("skinsdb_3d_armor_character_5.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.b3d"))
+		assert.equal("skinsdb_3d_armor_character_5.b3d", player_api.resolve_model("skinsdb_3d_armor_character.b3d"))
+		assert.equal("skinsdb_3d_armor_character_5.b3d", player_api.resolve_model("skinsdb_3d_armor_character_5.glb"))
 	end)
 
 	it("skips skinsdb integration when setting is disabled", function()
@@ -324,6 +378,97 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.is_false(x_player_bridge.config.enable_skinsdb)
 		local resolved = player_api.resolve_model("skinsdb_3d_armor_character_5.b3d")
 		assert.equal("skinsdb_3d_armor_character_5.b3d", resolved)
+	end)
+
+	it("preserves skinsdb 1.8 3D model and 4-slot textures when 3d_armor updates visuals", function()
+		reset_bridge_env()
+		core._enabled_mods["3d_armor"] = true
+		core._enabled_mods["skinsdb"] = true
+
+		-- Mock skinsdb skin object with 1.8 format and character_2199.png
+		local mock_skin = {
+			get_meta = function(_self, key)
+				if key == "format" then return "1.8" end
+				return nil
+			end,
+			get_texture = function(_self)
+				return "character_2199.png"
+			end,
+			apply_skin_to_player = function(_self, p)
+				player_api.set_model(p, "skinsdb_3d_armor_character_5.b3d")
+				player_api.set_textures(p, {
+					"blank.png",
+					"character_2199.png",
+					"3d_armor_chestplate.png",
+					"wieldview_sword.png",
+				})
+			end,
+		}
+
+		_G.skins = {
+			get_player_skin = function(_p)
+				return mock_skin
+			end,
+			update_player_skin = function(p)
+				mock_skin:apply_skin_to_player(p)
+			end,
+		}
+
+		-- Mock 3d_armor update_player_visuals as skinsdb hooks it in skinsdb/init.lua:56
+		armor.update_player_visuals = function(_self, p)
+			if not p then return end
+			local skin = skins.get_player_skin(p)
+			skin:apply_skin_to_player(p)
+		end
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("SkinTester")
+
+		-- Execute armor:update_player_visuals (which goes through bridge_update_visuals hook)
+		armor.update_player_visuals(armor, player)
+
+		-- Verify model is NOT stomped to 3d_armor_character.b3d and remains skinsdb_3d_armor_character_5.b3d
+		assert.equal("skinsdb_3d_armor_character_5.b3d", player_api.get_model_name(player))
+
+		-- Verify 4-slot texture layout on player
+		local textures = player_api.get_textures(player)
+		assert.equal(4, #textures)
+		assert.equal("blank.png", textures[1])
+		assert.equal("character_2199.png", textures[2])
+		assert.equal("3d_armor_chestplate.png", textures[3])
+		assert.equal("blank.png", textures[4])
+
+		-- Verify visual proxies received textures and use_texture_alpha
+		local proxies = player_api.get_visual_proxies(player)
+		assert.is_not_nil(proxies)
+		local glb_props = proxies.glb:get_properties()
+		assert.equal("skinsdb_3d_armor_character_5.glb", glb_props.mesh)
+		assert.equal(4, #glb_props.textures)
+		assert.equal("blank.png", glb_props.textures[1])
+		assert.equal("character_2199.png", glb_props.textures[2])
+		assert.equal("3d_armor_chestplate.png", glb_props.textures[3])
+		assert.equal("blank.png", glb_props.textures[4])
+		assert.is_true(glb_props.use_texture_alpha)
+
+		-- Verify 3-slot caller array ({skin, armor, wield}) maps correctly to 4-slot model
+		player_api.set_textures(player, {
+			"character_2199.png",
+			"3d_armor_diamond_chestplate.png",
+			"blank.png",
+		})
+		local tex3to4 = player_api.get_textures(player)
+		assert.equal(4, #tex3to4)
+		assert.equal("blank.png", tex3to4[1])
+		assert.equal("character_2199.png", tex3to4[2])
+		assert.equal("3d_armor_diamond_chestplate.png", tex3to4[3])
+		assert.equal("blank.png", tex3to4[4])
+
+		local glb_props_after = proxies.glb:get_properties()
+		assert.equal("3d_armor_diamond_chestplate.png", glb_props_after.textures[3])
+		assert.equal("blank.png", glb_props_after.textures[4])
+
+		_G.skins = nil
 	end)
 
 	it("loads shields integration and registers blocking predicate when enabled", function()

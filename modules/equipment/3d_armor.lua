@@ -20,9 +20,14 @@ local function hook_3d_armor()
 			armor_obj = armor_mod
 		end
 
-		-- Ensure the model is forced to the dual model we registered before visuals update
-		if target_player then
+		local has_skinsdb = rawget(_G, "skins") and x_player_bridge.is_module_active("skinsdb")
+
+		-- Ensure the model is forced to the dual model we registered before visuals update,
+		-- but defer to skinsdb 1.8 3D character mesh when skinsdb is active
+		if target_player and not has_skinsdb then
 			x_player_api.set_model(target_player, "3d_armor_character.b3d")
+		elseif target_player and has_skinsdb then
+			x_player_api.set_model(target_player, "skinsdb_3d_armor_character_5.b3d")
 		end
 
 		-- If 3D wield items are active, ensure slot 3 (2D quad) remains blank to prevent duplicate rendering
@@ -36,9 +41,12 @@ local function hook_3d_armor()
 		-- Call original to handle setting player_api textures, which will route to proxies
 		old_update_player_visuals(armor_obj, target_player)
 
-		-- Ensure the model remains the dual model in case old_update_player_visuals altered it
-		if target_player then
+		-- Ensure the model remains the dual model in case old_update_player_visuals altered it,
+		-- preserving skinsdb 1.8 character model when skinsdb is active
+		if target_player and not has_skinsdb then
 			x_player_api.set_model(target_player, "3d_armor_character.b3d")
+		elseif target_player and has_skinsdb then
+			x_player_api.set_model(target_player, "skinsdb_3d_armor_character_5.b3d")
 		end
 	end
 
@@ -51,6 +59,10 @@ end
 local function sync_armor(player)
 	local armor_mod = rawget(_G, "armor")
 	if player and player:is_valid() and player:is_player() and armor_mod then
+		local has_skinsdb = rawget(_G, "skins") and x_player_bridge.is_module_active("skinsdb")
+		if has_skinsdb then
+			x_player_api.set_model(player, "skinsdb_3d_armor_character_5.b3d")
+		end
 		armor_mod:load_armor_inventory(player)
 		armor_mod:set_player_armor(player)
 	end
@@ -71,6 +83,7 @@ x_player_bridge.register_module("3d_armor", {
 			base_model = "character.b3d",
 			mesh = "3d_armor_character.b3d",
 			mesh_glb = "3d_armor_character.glb",
+			use_texture_alpha = true,
 			override_animations = true,
 			animations = base_char and table.copy(base_char.animations) or nil,
 			animations_glb = base_char and table.copy(base_char.animations_glb) or nil,
