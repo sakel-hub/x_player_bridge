@@ -449,7 +449,7 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.equal("character_2199.png", glb_props.textures[2])
 		assert.equal("3d_armor_chestplate.png", glb_props.textures[3])
 		assert.equal("blank.png", glb_props.textures[4])
-		assert.is_true(glb_props.use_texture_alpha)
+		assert.is_false(glb_props.use_texture_alpha)
 
 		-- Verify 3-slot caller array ({skin, armor, wield}) maps correctly to 4-slot model
 		player_api.set_textures(player, {

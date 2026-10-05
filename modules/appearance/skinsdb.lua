@@ -160,7 +160,7 @@ x_player_bridge.register_module("skinsdb", {
 			base_model = "character.b3d",
 			mesh = "skinsdb_3d_armor_character_5.b3d",
 			mesh_glb = "skinsdb_3d_armor_character_5.glb",
-			use_texture_alpha = true,
+			use_texture_alpha = false,
 			override_animations = true,
 			animations = base_char and table.copy(base_char.animations) or nil,
 			animations_glb = base_char and table.copy(base_char.animations_glb) or nil,
