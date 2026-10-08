@@ -19,6 +19,7 @@ x_player_bridge.enable_stamina (Enable Stamina sprint and exhaustion synchroniza
 x_player_bridge.enable_hangglider (Enable Hangglider aerodynamic flight posture) bool true
 x_player_bridge.enable_flyswim_compat (Enable 3D Armor Flyswim model redirect compat) bool true
 x_player_bridge.enable_carts (Enable Carts standing posture integration) bool true
+x_player_bridge.enable_mcl_cozy (Enable mcl_cozy and mcl_decor sitting and laying posture integration) bool true
 
 # Social & Emotes
 x_player_bridge.enable_emote (Enable Emote mod multi-track action mapping) bool true

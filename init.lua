@@ -19,6 +19,7 @@ dofile(modpath .. "/modules/locomotion/stamina.lua")
 dofile(modpath .. "/modules/locomotion/hangglider.lua")
 dofile(modpath .. "/modules/locomotion/flyswim_compat.lua")
 dofile(modpath .. "/modules/locomotion/carts.lua")
+dofile(modpath .. "/modules/locomotion/mcl_cozy.lua")
 dofile(modpath .. "/modules/social/emote.lua")
 
 -- Initialize active modules immediately at load time

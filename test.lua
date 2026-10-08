@@ -38,6 +38,8 @@ describe("x_player_bridge Modular Architecture", function()
 			update_wielded_item = function() end,
 			get_item_texture = function() return "item.png" end,
 		})
+		rawset(_G, "mcl_cozy", nil)
+		rawset(_G, "mcl_player", nil)
 		rawset(_G, "x_player_bridge", nil)
 	end
 
@@ -910,6 +912,71 @@ describe("x_player_bridge Modular Architecture", function()
 			cb(test_player)
 		end
 		assert.is_true(respawn_called)
+	end)
+
+	it("integrates mcl_cozy and preserves sit and lay animations on visual proxies", function()
+		reset_bridge_env()
+		core._enabled_mods["mcl_cozy"] = true
+
+		local mock_cozy
+		mock_cozy = {
+			players = {},
+			sit = function(_pos, _node, p)
+				mock_cozy.players[p:get_player_name()] = {vector.new(0, 0, 0), "sit"}
+			end,
+			lay = function(_pos, _node, p)
+				mock_cozy.players[p:get_player_name()] = {vector.new(0, 0, 0), "lay"}
+			end,
+			stand_up = function(p)
+				mock_cozy.players[p:get_player_name()] = nil
+			end,
+		}
+		rawset(_G, "mcl_cozy", mock_cozy)
+
+		core.registered_nodes["default:dirt"] = {walkable = true}
+		core.get_node_or_nil = function(pos)
+			if pos.y < 0 then
+				return {name = "default:dirt"}
+			end
+			return {name = "air"}
+		end
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("CozySitter")
+		player._pos = {x = 0, y = 0.5, z = 0}
+		player_api.set_model(player, "character.glb")
+		local name = player:get_player_name()
+
+		assert.is_true(x_player_bridge.is_module_active("mcl_cozy"))
+
+		-- Test sitting
+		mock_cozy.sit(nil, nil, player)
+		assert.equal("sit", x_player_api.player_attached[name])
+		local pstate = x_player_api.get_player_state(player)
+		assert.equal("sit", pstate.locomotion)
+
+		-- Test laying
+		mock_cozy.lay(nil, nil, player)
+		assert.equal("lay", x_player_api.player_attached[name])
+		pstate = x_player_api.get_player_state(player)
+		assert.equal("lay", pstate.locomotion)
+
+		-- Test stand up
+		mock_cozy.stand_up(player)
+		assert.is_nil(x_player_api.player_attached[name])
+		pstate = x_player_api.get_player_state(player)
+		assert.equal("stand", pstate.locomotion)
+	end)
+
+	it("skips mcl_cozy integration when setting is disabled", function()
+		reset_bridge_env()
+		core._enabled_mods["mcl_cozy"] = true
+		core.settings:set_bool("x_player_bridge.enable_mcl_cozy", false)
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_bridge.is_module_active("mcl_cozy"))
 	end)
 
 	-- Restore original environment
