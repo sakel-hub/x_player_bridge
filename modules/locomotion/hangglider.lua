@@ -45,8 +45,7 @@ x_player_bridge.register_module("hangglider", {
 		x_player_api.register_locomotion_evaluator(60, function(player, _context)
 			if is_hangglider_active(player) then
 				local name = player:get_player_name()
-				local states = x_player_api.controls.player_states
-				local pstate = states and states[name]
+				local pstate = x_player_api.controls.player_states[name]
 				if pstate and pstate.semantic_state then
 					pstate.semantic_state.gliding = true
 				end

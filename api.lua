@@ -21,7 +21,7 @@
 ---@field registered_modules table<string, BridgeModuleDefinition>
 ---@field active_modules table<string, BridgeModuleDefinition>
 ---@field config table<string, boolean>
-x_player_bridge = rawget(_G, "x_player_bridge") or {
+x_player_bridge = {
 	registered_modules = {},
 	active_modules = {},
 	config = {},
@@ -147,7 +147,6 @@ end
 
 ---Lifecycle dispatch for player join
 core.register_on_joinplayer(function(player)
-	if not x_player_bridge or not x_player_bridge.active_modules then return end
 	for _, mod_def in pairs(x_player_bridge.active_modules) do
 		if mod_def.on_joinplayer then
 			mod_def:on_joinplayer(player)
@@ -157,7 +156,6 @@ end)
 
 ---Lifecycle dispatch for player leave
 core.register_on_leaveplayer(function(player)
-	if not x_player_bridge or not x_player_bridge.active_modules then return end
 	for _, mod_def in pairs(x_player_bridge.active_modules) do
 		if mod_def.on_leaveplayer then
 			mod_def:on_leaveplayer(player)
@@ -167,7 +165,6 @@ end)
 
 ---Lifecycle dispatch for player death
 core.register_on_dieplayer(function(player)
-	if not x_player_bridge or not x_player_bridge.active_modules then return end
 	for _, mod_def in pairs(x_player_bridge.active_modules) do
 		if mod_def.on_dieplayer then
 			mod_def:on_dieplayer(player)
@@ -177,7 +174,6 @@ end)
 
 ---Lifecycle dispatch for player respawn
 core.register_on_respawnplayer(function(player)
-	if not x_player_bridge or not x_player_bridge.active_modules then return end
 	for _, mod_def in pairs(x_player_bridge.active_modules) do
 		if mod_def.on_respawnplayer then
 			mod_def:on_respawnplayer(player)

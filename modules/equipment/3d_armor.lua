@@ -21,7 +21,7 @@ local function hook_3d_armor()
 			armor_obj = armor_mod
 		end
 
-		local has_skinsdb = rawget(_G, "skins") and x_player_bridge.is_module_active("skinsdb")
+		local has_skinsdb = x_player_bridge.is_module_active("skinsdb")
 
 		-- Ensure the model is forced to the dual model we registered before visuals update,
 		-- but defer to skinsdb 1.8 3D character mesh when skinsdb is active
@@ -60,7 +60,7 @@ end
 local function sync_armor(player)
 	local armor_mod = rawget(_G, "armor")
 	if player and player:is_valid() and player:is_player() and armor_mod and not armor_mod._is_x_player_armor then
-		local has_skinsdb = rawget(_G, "skins") and x_player_bridge.is_module_active("skinsdb")
+		local has_skinsdb = x_player_bridge.is_module_active("skinsdb")
 		if has_skinsdb then
 			x_player_api.set_model(player, "skinsdb_3d_armor_character_5.b3d")
 		end
@@ -77,7 +77,7 @@ x_player_bridge.register_module("3d_armor", {
 	priority = 100,
 
 	init = function()
-		local base_char = x_player_api.registered_models and x_player_api.registered_models["character.b3d"]
+		local base_char = x_player_api.registered_models["character.b3d"]
 
 		-- Register dual-model definition inheriting animations, hitboxes, and locomotion parameters from character.b3d
 		x_player_api.register_model("3d_armor_character.b3d", {

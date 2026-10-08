@@ -16,7 +16,7 @@ local function init_wield_hooks()
 		orig_wield3d_update = w3d.update_entity
 	end
 
-	local vw_entity = core.registered_entities and core.registered_entities["visible_wielditem:visible_wielditem"]
+	local vw_entity = core.registered_entities["visible_wielditem:visible_wielditem"]
 	if vw_entity and vw_entity._set_player then
 		orig_vw_set_player = vw_entity._set_player
 	end
@@ -29,7 +29,7 @@ end
 local function apply_wield3d_suppression(enable_native_3d)
 	init_wield_hooks()
 	local w3d = rawget(_G, "wield3d")
-	local vw_entity = core.registered_entities and core.registered_entities["visible_wielditem:visible_wielditem"]
+	local vw_entity = core.registered_entities["visible_wielditem:visible_wielditem"]
 
 	if enable_native_3d then
 		-- Suppress wield3d entity updates and hide existing entities

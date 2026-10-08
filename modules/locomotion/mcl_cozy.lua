@@ -29,9 +29,7 @@ local function hook_mcl_cozy()
 				if player and player:is_player() then
 					local name = player:get_player_name()
 					if cozy.players and cozy.players[name] then
-						if x_player_api.player_attached then
-							x_player_api.player_attached[name] = action_name
-						end
+						x_player_api.player_attached[name] = action_name
 						x_player_api.set_animation(player, action_name)
 					end
 				end
@@ -49,9 +47,7 @@ local function hook_mcl_cozy()
 			orig_stand_up(player)
 			if player and player:is_player() then
 				local name = player:get_player_name()
-				if x_player_api.player_attached then
-					x_player_api.player_attached[name] = nil
-				end
+				x_player_api.player_attached[name] = nil
 				x_player_api.set_animation(player, "stand")
 			end
 		end
@@ -59,7 +55,7 @@ local function hook_mcl_cozy()
 
 	-- Reconcile /sit and /lay chatcommands to invoke mcl_cozy when available
 	if core.override_chatcommand then
-		if core.registered_chatcommands and core.registered_chatcommands["sit"] then
+		if core.registered_chatcommands["sit"] then
 			core.override_chatcommand("sit", {
 				description = "Sit down",
 				func = function(name)
@@ -73,7 +69,7 @@ local function hook_mcl_cozy()
 				end,
 			})
 		end
-		if core.registered_chatcommands and core.registered_chatcommands["lay"] then
+		if core.registered_chatcommands["lay"] then
 			core.override_chatcommand("lay", {
 				description = "Lie down",
 				func = function(name)
@@ -95,7 +91,7 @@ local function hook_mcl_cozy()
 		local orig_mcl_anim = mcl_p.player_set_animation
 		mcl_p.player_set_animation = function(player, anim_name, speed)
 			orig_mcl_anim(player, anim_name, speed)
-			if player and player:is_player() and x_player_api.set_animation then
+			if player and player:is_player() then
 				x_player_api.set_animation(player, anim_name, speed)
 			end
 		end
@@ -118,19 +114,19 @@ x_player_bridge.register_module("mcl_cozy", {
 	end,
 
 	on_leaveplayer = function(_self, player)
-		if player and player:is_player() and x_player_api.player_attached then
+		if player and player:is_player() then
 			x_player_api.player_attached[player:get_player_name()] = nil
 		end
 	end,
 
 	on_dieplayer = function(_self, player)
-		if player and player:is_player() and x_player_api.player_attached then
+		if player and player:is_player() then
 			x_player_api.player_attached[player:get_player_name()] = nil
 		end
 	end,
 
 	on_respawnplayer = function(_self, player)
-		if player and player:is_player() and x_player_api.player_attached then
+		if player and player:is_player() then
 			x_player_api.player_attached[player:get_player_name()] = nil
 		end
 	end,

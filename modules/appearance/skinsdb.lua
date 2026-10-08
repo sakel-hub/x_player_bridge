@@ -140,9 +140,7 @@ local function hook_skinsdb_textures()
 	end
 
 	x_player_api.set_textures = adapted_set_textures
-	if player_api then
-		player_api.set_textures = adapted_set_textures
-	end
+	player_api.set_textures = adapted_set_textures
 end
 
 x_player_bridge.register_module("skinsdb", {
@@ -153,7 +151,7 @@ x_player_bridge.register_module("skinsdb", {
 	priority = 80,
 
 	init = function()
-		local base_char = x_player_api.registered_models and x_player_api.registered_models["character.b3d"]
+		local base_char = x_player_api.registered_models["character.b3d"]
 
 		-- Register modern dual-model with full 1.8 3D mesh and all x_player_api animations
 		x_player_api.register_model("skinsdb_3d_armor_character_5.b3d", {

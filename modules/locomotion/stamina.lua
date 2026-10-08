@@ -14,8 +14,7 @@ local function hook_stamina()
 				return
 			end
 			local name = player:get_player_name()
-			local states = x_player_api.controls.player_states
-			local pstate = states and states[name]
+			local pstate = x_player_api.controls.player_states[name]
 			if pstate and not sprinting and pstate.double_tap_sprint then
 				pstate.double_tap_sprint = false
 			end
@@ -26,8 +25,7 @@ local function hook_stamina()
 	x_player_api.register_locomotion_evaluator(75, function(player, _ctx)
 		if stamina_mod and stamina_mod.is_sprinting and stamina_mod.is_sprinting(player) then
 			local name = player:get_player_name()
-			local states = x_player_api.controls.player_states
-			local pstate = states and states[name]
+			local pstate = x_player_api.controls.player_states[name]
 			if pstate then
 				pstate.double_tap_sprint = true
 				if pstate.semantic_state then

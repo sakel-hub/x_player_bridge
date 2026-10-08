@@ -10,12 +10,12 @@ local function is_player_in_cart(player)
 		return false
 	end
 
-	local parent = player.get_attach and player:get_attach()
+	local parent = player:get_attach()
 	if not parent then
 		return false
 	end
 
-	local luaentity = parent.get_luaentity and parent:get_luaentity()
+	local luaentity = parent:get_luaentity()
 	if not luaentity then
 		return false
 	end
