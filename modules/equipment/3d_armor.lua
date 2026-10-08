@@ -3,7 +3,8 @@
 
 local function hook_3d_armor()
 	local armor_mod = rawget(_G, "armor")
-	if not armor_mod or armor_mod.update_player_visuals == armor_mod._x_player_bridge_wrapped then
+	if not armor_mod or armor_mod._is_x_player_armor
+			or armor_mod.update_player_visuals == armor_mod._x_player_bridge_wrapped then
 		return
 	end
 
@@ -58,7 +59,7 @@ end
 ---@param player ObjectRef Connecting player
 local function sync_armor(player)
 	local armor_mod = rawget(_G, "armor")
-	if player and player:is_valid() and player:is_player() and armor_mod then
+	if player and player:is_valid() and player:is_player() and armor_mod and not armor_mod._is_x_player_armor then
 		local has_skinsdb = rawget(_G, "skins") and x_player_bridge.is_module_active("skinsdb")
 		if has_skinsdb then
 			x_player_api.set_model(player, "skinsdb_3d_armor_character_5.b3d")

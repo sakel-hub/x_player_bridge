@@ -46,6 +46,9 @@ x_player_bridge.register_module("shields", {
 	priority = 90,
 
 	init = function()
+		if rawget(_G, "x_player_armor") then
+			return true -- x_player_armor handles shield blocking natively
+		end
 		x_player_api.register_blocking_predicate(function(player, _wield_name, _item_info)
 			return is_shield_equipped(player)
 		end)

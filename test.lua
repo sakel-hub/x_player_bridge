@@ -88,6 +88,20 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.equal(player, received_player)
 	end)
 
+	it("skips 3d_armor visual hooking when armor._is_x_player_armor is true", function()
+		reset_bridge_env()
+		core._enabled_mods["3d_armor"] = true
+		armor._is_x_player_armor = true
+
+		local original_update = function() end
+		armor.update_player_visuals = original_update
+
+		dofile("init.lua")
+
+		assert.equal(original_update, armor.update_player_visuals)
+		assert.is_nil(armor._x_player_bridge_wrapped)
+	end)
+
 	it("synchronizes armor inventory and visuals on player reconnect", function()
 		reset_bridge_env()
 		core._enabled_mods["3d_armor"] = true
@@ -501,6 +515,25 @@ describe("x_player_bridge Modular Architecture", function()
 		local state = player_api.get_player_state(player)
 		assert.is_true(state.blocking)
 		assert.equal("block", state.action)
+	end)
+
+	it("skips shields blocking predicate registration when x_player_armor is present", function()
+		reset_bridge_env()
+		core._enabled_mods["shields"] = true
+		core._enabled_mods["3d_armor"] = true
+
+		local registered_predicate = false
+		local orig_register = x_player_api.register_blocking_predicate
+		x_player_api.register_blocking_predicate = function(fn)
+			registered_predicate = true
+			return orig_register(fn)
+		end
+
+		rawset(_G, "x_player_armor", {})
+		dofile("init.lua")
+		rawset(_G, "x_player_armor", nil)
+
+		assert.is_false(registered_predicate)
 	end)
 
 	it("skips shields integration when setting is disabled", function()
