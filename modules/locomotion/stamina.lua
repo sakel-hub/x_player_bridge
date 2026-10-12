@@ -7,24 +7,21 @@ local function hook_stamina()
 		return
 	end
 
-	-- Detect Stamina configuration
-	local sprint_enabled
-	if stamina_mod.settings and stamina_mod.settings.sprint ~= nil then
-		sprint_enabled = stamina_mod.settings.sprint
-	elseif stamina_mod.enable_sprint ~= nil then
-		sprint_enabled = stamina_mod.enable_sprint
-	else
-		sprint_enabled = core.settings:get_bool("stamina.sprint", true)
+	-- Helper to query setting from stamina_mod table or core.settings
+	local function get_stamina_flag(key, setting_key)
+		if stamina_mod[key] ~= nil then
+			return stamina_mod[key]
+		elseif stamina_mod.settings and stamina_mod.settings[key] ~= nil then
+			return stamina_mod.settings[key]
+		end
+		return core.settings:get_bool(setting_key, true)
 	end
 
-	local sprint_aux
-	if stamina_mod.sprint_aux ~= nil then
-		sprint_aux = stamina_mod.sprint_aux
-	elseif stamina_mod.settings and stamina_mod.settings.sprint_aux ~= nil then
-		sprint_aux = stamina_mod.settings.sprint_aux
-	else
-		sprint_aux = core.settings:get_bool("stamina.sprint_aux", true)
+	local sprint_enabled = get_stamina_flag("sprint", "stamina.sprint")
+	if stamina_mod.enable_sprint ~= nil then
+		sprint_enabled = stamina_mod.enable_sprint
 	end
+	local sprint_aux = get_stamina_flag("sprint_aux", "stamina.sprint_aux")
 
 	-- If sprint is disabled completely or AUX1 sprint is disabled in stamina mod,
 	-- dynamically disable AUX1 sprinting in x_player_api so AUX1 can be used for other mods
@@ -35,14 +32,16 @@ local function hook_stamina()
 		x_player_api.set_aux1_sprint_enabled(false)
 	end
 
+	local player_states = x_player_api.controls.player_states
+
 	-- Register callback with stamina to synchronize sprint state
 	if stamina_mod.register_on_sprinting then
 		stamina_mod.register_on_sprinting(function(player, sprinting)
-			if not player or not player:is_player() then
+			if not player:is_player() then
 				return
 			end
 			local name = player:get_player_name()
-			local pstate = x_player_api.controls.player_states[name]
+			local pstate = player_states[name]
 			if pstate and not sprinting and pstate.double_tap_sprint then
 				pstate.double_tap_sprint = false
 			end
@@ -51,25 +50,17 @@ local function hook_stamina()
 
 	-- Register locomotion evaluator: stamina is authoritative on whether player is sprinting
 	x_player_api.register_locomotion_evaluator(75, function(player, ctx)
-		if not stamina_mod or not stamina_mod.is_sprinting then
+		if not stamina_mod.is_sprinting then
 			return nil
 		end
 
 		if stamina_mod.is_sprinting(player) then
-			local name = player:get_player_name()
-			local pstate = x_player_api.controls.player_states[name]
-			if pstate then
-				pstate.double_tap_sprint = true
-				if pstate.semantic_state then
-					pstate.semantic_state.sprinting = true
-				end
-			end
 			return "sprint"
 		elseif ctx and (ctx.is_sprinting or ctx.loco == "sprint") then
 			-- Stamina mod reports player is NOT sprinting (e.g. exhausted or sprint disabled)
 			-- Suppress x_player_api sprint animation and drop back to normal walking
 			local name = player:get_player_name()
-			local pstate = x_player_api.controls.player_states[name]
+			local pstate = player_states[name]
 			if pstate then
 				pstate.double_tap_sprint = false
 			end
