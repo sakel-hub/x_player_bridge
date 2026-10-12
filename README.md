@@ -57,7 +57,8 @@ Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and si
 * **Bows (`combat/bows.lua`)**: Maps external bow drawing states into `x_player_api`'s `bow_aim` and `bow_shoot` action animations.
 
 ### Locomotion
-* **Stamina (`locomotion/stamina.lua`)**: Maps sprinting mechanics into `x_player_api`'s `sprint` animation state.
+* **Stamina (`locomotion/stamina.lua`)**: Synchronizes stamina sprinting states with `x_player_api` sprint locomotion and exhaustion. Dynamically reads `stamina.sprint_aux` and `stamina.sprint` settings, auto-disabling AUX1 sprint when stamina frees AUX1 for other uses (such as jetpacks).
+* **Sprinting & Flight (`locomotion/sprinting.lua`)**: Coordinates third-party sprinting and flight equipment mods (`sprinting` by xXOsielXx, `sprint` by GunshipPenguin, `sprint_lite`, `hbsprint`, and `sum_jetpack`). Automatically synchronizes AUX1 configuration (`sprinting_use_aux1 = false`, `SPRINT_METHOD = 0`), tracks runtime sprint and stamina exhaustion states, and ensures airborne descending with jetpacks displays flight/hover locomotion instead of sprint strides.
 * **Hangglider (`locomotion/hangglider.lua`)**: Bridges glider deployment to the `glide` animation state and adjusts player visual pitch during flight.
 * **FlySwim Compat (`locomotion/flyswim_compat.lua`)**: Ensures crawl and swim animation states cooperate smoothly with 3D armor models.
 * **Carts (`locomotion/carts.lua`)**: Preserves upright standing posture when riding in minecarts (`carts:cart`) and rail vehicles instead of forcing sitting animations.
@@ -91,7 +92,8 @@ Each integration can be independently enabled or disabled via the in-game Settin
 | `x_player_bridge.enable_simple_skins` | bool | `true` | Enable `simple_skins` proxy texture synchronization |
 | `x_player_bridge.enable_clothing` | bool | `true` | Enable `clothing` proxy layer synchronization |
 | `x_player_bridge.enable_bows` | bool | `true` | Enable `bows` aiming and shooting animation mapping |
-| `x_player_bridge.enable_stamina` | bool | `true` | Enable `stamina` sprinting animation integration |
+| `x_player_bridge.enable_stamina` | bool | `true` | Enable `stamina` sprinting and exhaustion synchronization |
+| `x_player_bridge.enable_sprinting` | bool | `true` | Enable third-party sprinting mods and AUX1 synchronization |
 | `x_player_bridge.enable_hangglider` | bool | `true` | Enable `hangglider` gliding flight state integration |
 | `x_player_bridge.enable_flyswim_compat` | bool | `true` | Enable swim and crawl animation compatibility |
 | `x_player_bridge.enable_carts` | bool | `true` | Enable minecart standing posture integration |

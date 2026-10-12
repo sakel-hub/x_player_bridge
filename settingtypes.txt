@@ -16,6 +16,7 @@ x_player_bridge.enable_bows (Enable Bows charging and shooting action integratio
 
 # Locomotion & Physics
 x_player_bridge.enable_stamina (Enable Stamina sprint and exhaustion synchronization) bool true
+x_player_bridge.enable_sprinting (Enable Sprinting mods compatibility and AUX1 synchronization) bool true
 x_player_bridge.enable_hangglider (Enable Hangglider aerodynamic flight posture) bool true
 x_player_bridge.enable_flyswim_compat (Enable 3D Armor Flyswim model redirect compat) bool true
 x_player_bridge.enable_carts (Enable Carts standing posture integration) bool true

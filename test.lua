@@ -40,7 +40,17 @@ describe("x_player_bridge Modular Architecture", function()
 		})
 		rawset(_G, "mcl_cozy", nil)
 		rawset(_G, "mcl_player", nil)
+		rawset(_G, "stamina", nil)
+		rawset(_G, "sprint", nil)
+		rawset(_G, "sprint_lite", nil)
+		rawset(_G, "sum_jetpack", nil)
+		rawset(_G, "SPRINT_METHOD", nil)
 		rawset(_G, "x_player_bridge", nil)
+		if x_player_api then
+			x_player_api.enable_aux1_sprint = true
+			x_player_api.enable_double_tap_sprint = true
+			x_player_api.controls.locomotion_evaluators = {}
+		end
 	end
 
 	it("loads 3d_armor integration when enabled and mod is present", function()
@@ -566,6 +576,7 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.is_not_nil(x_player_bridge.get_module("wield3d"))
 		assert.is_not_nil(x_player_bridge.get_module("bows"))
 		assert.is_not_nil(x_player_bridge.get_module("stamina"))
+		assert.is_not_nil(x_player_bridge.get_module("sprinting"))
 		assert.is_not_nil(x_player_bridge.get_module("hangglider"))
 		assert.is_not_nil(x_player_bridge.get_module("flyswim_compat"))
 		assert.is_not_nil(x_player_bridge.get_module("emote"))
@@ -692,6 +703,228 @@ describe("x_player_bridge Modular Architecture", function()
 
 		local state = player_api.get_player_state(player)
 		assert.equal("sprint", state.locomotion)
+	end)
+
+	it("disables aux1 sprint when stamina.sprint_aux is false", function()
+		reset_bridge_env()
+		core._enabled_mods["stamina"] = true
+		rawset(_G, "stamina", {
+			sprint_aux = false,
+			is_sprinting = function() return false end,
+		})
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_api.enable_aux1_sprint)
+		assert.is_true(x_player_api.enable_double_tap_sprint)
+	end)
+
+	it("disables both aux1 and double-tap sprint when stamina.sprint is false", function()
+		reset_bridge_env()
+		core._enabled_mods["stamina"] = true
+		rawset(_G, "stamina", {
+			settings = { sprint = false },
+			is_sprinting = function() return false end,
+		})
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_api.enable_aux1_sprint)
+		assert.is_false(x_player_api.enable_double_tap_sprint)
+	end)
+
+	it("suppresses sprint locomotion and drops to walk when stamina is exhausted", function()
+		reset_bridge_env()
+		core._enabled_mods["stamina"] = true
+		local is_sprinting_val = true
+		rawset(_G, "stamina", {
+			is_sprinting = function() return is_sprinting_val end,
+		})
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("ExhaustedRunner")
+		player.get_player_control = function()
+			return { up = true, aux1 = true }
+		end
+		player_api.controls.update_player_controls(player, 0.1)
+
+		-- Initially sprinting
+		local state = player_api.get_player_state(player)
+		assert.equal("sprint", state.locomotion)
+
+		-- Stamina runs out: is_sprinting returns false
+		is_sprinting_val = false
+		player._controls = { up = true, aux1 = true }
+		local pstate = x_player_api.controls.player_states["ExhaustedRunner"]
+		if pstate then pstate.controls = nil end
+		player_api.controls.update_player_controls(player, 0.1)
+
+		local state_exhausted = player_api.get_player_state(player)
+		assert.equal("walk", state_exhausted.locomotion)
+		assert.is_false(state_exhausted.sprinting)
+	end)
+
+	it("disables aux1 sprint when sprinting mod sets sprinting_use_aux1 to false", function()
+		reset_bridge_env()
+		core._enabled_mods["sprinting"] = true
+		core.settings:set_bool("sprinting_use_aux1", false)
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.config.enable_sprinting)
+		assert.is_false(x_player_api.enable_aux1_sprint)
+	end)
+
+	it("maps sprint locomotion when external sprinting mod applies speed override", function()
+		reset_bridge_env()
+		core._enabled_mods["sprinting"] = true
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("FastMover")
+		player._pos = { x = 0, y = 0.5, z = 0 }
+		core.registered_nodes["default:dirt"] = { walkable = true }
+		core.get_node_or_nil = function(pos)
+			if pos.y < 0 then return { name = "default:dirt" } end
+			return { name = "air" }
+		end
+		player.get_physics_override = function()
+			return { speed = 1.5 }
+		end
+		player.get_player_control = function()
+			return { up = true }
+		end
+
+		local state = player_api.get_player_state(player)
+		assert.equal("sprint", state.locomotion)
+		assert.is_true(state.sprinting)
+	end)
+
+	it("disables aux1 sprint when GunshipPenguin sprint mod SPRINT_METHOD is 0", function()
+		reset_bridge_env()
+		core._enabled_mods["sprint"] = true
+		rawset(_G, "SPRINT_METHOD", 0)
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_api.enable_aux1_sprint)
+	end)
+
+	it("synchronizes GunshipPenguin sprint.players state and suppresses sprint when moving is false", function()
+		reset_bridge_env()
+		core._enabled_mods["sprint"] = true
+		rawset(_G, "sprint", {
+			players = {
+				["Penguin"] = { state = 1, moving = true },
+			},
+		})
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("Penguin")
+		player._pos = { x = 0, y = 0.5, z = 0 }
+		core.registered_nodes["default:dirt"] = { walkable = true }
+		core.get_node_or_nil = function(pos)
+			if pos.y < 0 then return { name = "default:dirt" } end
+			return { name = "air" }
+		end
+		player.get_player_control = function()
+			return { up = true }
+		end
+
+		local state = player_api.get_player_state(player)
+		assert.equal("sprint", state.locomotion)
+
+		-- Now simulate sprint mod stopping movement
+		local sprint_mod = rawget(_G, "sprint")
+		sprint_mod.players["Penguin"].moving = false
+		sprint_mod.players["Penguin"].state = 0
+		player._controls = { up = true, aux1 = true }
+		local pstate = x_player_api.controls.player_states["Penguin"]
+		if pstate then pstate.controls = nil end
+		player_api.controls.update_player_controls(player, 0.1)
+
+		local state_stopped = player_api.get_player_state(player)
+		assert.equal("walk", state_stopped.locomotion)
+	end)
+
+	it("suppresses sprint locomotion when sprint_lite reports 0 stamina", function()
+		reset_bridge_env()
+		core._enabled_mods["sprint_lite"] = true
+		local cur_stam = 100
+		rawset(_G, "sprint_lite", {
+			get_stamina = function(_name) return cur_stam end,
+		})
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("LiteRunner")
+		player._pos = { x = 0, y = 0.5, z = 0 }
+		core.registered_nodes["default:dirt"] = { walkable = true }
+		core.get_node_or_nil = function(pos)
+			if pos.y < 0 then return { name = "default:dirt" } end
+			return { name = "air" }
+		end
+		player.get_player_control = function()
+			return { up = true, aux1 = true }
+		end
+		player_api.controls.update_player_controls(player, 0.1)
+
+		local state = player_api.get_player_state(player)
+		assert.equal("sprint", state.locomotion)
+
+		-- Stamina depleted
+		cur_stam = 0
+		player._controls = { up = true, aux1 = true }
+		local pstate = x_player_api.controls.player_states["LiteRunner"]
+		if pstate then pstate.controls = nil end
+		player_api.controls.update_player_controls(player, 0.1)
+
+		local state_tired = player_api.get_player_state(player)
+		assert.equal("walk", state_tired.locomotion)
+	end)
+
+	it("prevents sprint locomotion and maintains fly/hover when descending with sum_jetpack in air", function()
+		reset_bridge_env()
+		core._enabled_mods["sum_jetpack"] = true
+		rawset(_G, "sum_jetpack", {
+			is_flying = function(p) return p:get_player_name() == "Jetpacker" end,
+		})
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("Jetpacker")
+		player:get_meta():set_int("sum_jetpack:flying", 1)
+		player.get_player_control = function()
+			return { up = true, aux1 = true }
+		end
+		-- In air moving horizontally
+		player._pos = { x = 0, y = 100, z = 0 }
+		player:set_velocity({ x = 4, y = -2, z = 0 })
+		core.registered_nodes["default:dirt"] = { walkable = true }
+		core.get_node_or_nil = function(_pos) return { name = "air" } end
+
+		local state = player_api.get_player_state(player)
+		assert.equal("fly", state.locomotion)
+		assert.is_false(state.sprinting)
+
+		-- In air hovering/descending vertically without horizontal speed
+		player:set_velocity({ x = 0, y = -3, z = 0 })
+		local state_descend = player_api.get_player_state(player)
+		assert.equal("hover", state_descend.locomotion)
+		assert.is_false(state_descend.sprinting)
+	end)
+
+	it("skips sprinting integration when setting is disabled", function()
+		reset_bridge_env()
+		core._enabled_mods["sprinting"] = true
+		core.settings:set_bool("x_player_bridge.enable_sprinting", false)
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_bridge.config.enable_sprinting)
+		assert.is_false(x_player_bridge.is_module_active("sprinting"))
 	end)
 
 	it("integrates hangglider mod and triggers glide animation state", function()
