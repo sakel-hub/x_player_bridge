@@ -885,7 +885,7 @@ describe("x_player_bridge Modular Architecture", function()
 		assert.equal("walk", state_tired.locomotion)
 	end)
 
-	it("prevents sprint locomotion and maintains fly/hover when descending with sum_jetpack in air", function()
+	it("prevents sprint locomotion and maintains hover when flying or descending with sum_jetpack in air", function()
 		reset_bridge_env()
 		core._enabled_mods["sum_jetpack"] = true
 		rawset(_G, "sum_jetpack", {
@@ -899,14 +899,14 @@ describe("x_player_bridge Modular Architecture", function()
 		player.get_player_control = function()
 			return { up = true, aux1 = true }
 		end
-		-- In air moving horizontally
+		-- In air moving horizontally while holding aux1 (descending)
 		player._pos = { x = 0, y = 100, z = 0 }
 		player:set_velocity({ x = 4, y = -2, z = 0 })
 		core.registered_nodes["default:dirt"] = { walkable = true }
 		core.get_node_or_nil = function(_pos) return { name = "air" } end
 
 		local state = player_api.get_player_state(player)
-		assert.equal("fly", state.locomotion)
+		assert.equal("hover", state.locomotion)
 		assert.is_false(state.sprinting)
 
 		-- In air hovering/descending vertically without horizontal speed
@@ -914,6 +914,15 @@ describe("x_player_bridge Modular Architecture", function()
 		local state_descend = player_api.get_player_state(player)
 		assert.equal("hover", state_descend.locomotion)
 		assert.is_false(state_descend.sprinting)
+
+		-- In air moving forward fast with jetpack without aux1
+		player.get_player_control = function()
+			return { up = true, aux1 = false }
+		end
+		player:set_velocity({ x = 8, y = 0, z = 0 })
+		local state_fast = player_api.get_player_state(player)
+		assert.equal("hover", state_fast.locomotion)
+		assert.is_false(state_fast.sprinting)
 	end)
 
 	it("skips sprinting integration when setting is disabled", function()

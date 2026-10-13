@@ -26,11 +26,12 @@ local function hook_sprinting_mods()
 		end
 	end
 
-	-- 3. Airborne Jetpack flight/descend protection (Priority 80)
-	-- Evaluates above sprint evaluators so descending via AUX1 in air is never overridden by sprint
+	-- Airborne Jetpack flight and descent protection
+	-- Evaluates above sprint evaluators so jetpack flight and descending via AUX1 in air
+	-- displays hover locomotion instead of prone flight or sprint strides
 	if has_jetpack then
 		x_player_api.register_locomotion_evaluator(80, function(player, ctx)
-			if not (ctx.in_air and ctx.controls and ctx.controls.aux1) then
+			if not ctx.in_air then
 				return nil
 			end
 
@@ -54,8 +55,7 @@ local function hook_sprinting_mods()
 			end
 
 			if is_flying then
-				local horiz_speed_sq = (ctx.vel.x * ctx.vel.x) + (ctx.vel.z * ctx.vel.z)
-				return (horiz_speed_sq > 0.08) and "fly" or "hover"
+				return "hover"
 			end
 
 			return nil
