@@ -50,6 +50,7 @@ describe("x_player_bridge Modular Architecture", function()
 			x_player_api.enable_aux1_sprint = true
 			x_player_api.enable_double_tap_sprint = true
 			x_player_api.controls.locomotion_evaluators = {}
+			x_player_api.controls.action_evaluators = {}
 		end
 	end
 
@@ -1219,6 +1220,154 @@ describe("x_player_bridge Modular Architecture", function()
 		dofile("init.lua")
 
 		assert.is_false(x_player_bridge.is_module_active("mcl_cozy"))
+	end)
+
+	it("loads i_have_hands integration when enabled and mod is present", function()
+		reset_bridge_env()
+		core._enabled_mods["i_have_hands"] = true
+
+		dofile("init.lua")
+
+		assert.is_true(x_player_bridge.is_module_active("i_have_hands"))
+		local mod_def = x_player_bridge.get_module("i_have_hands")
+		assert.is_not_nil(mod_def)
+		assert.equal(70, mod_def.priority)
+		assert.equal("x_player_bridge.enable_i_have_hands", mod_def.setting)
+	end)
+
+	it("detects carrying entity and evaluates action state as carry", function()
+		reset_bridge_env()
+		core._enabled_mods["i_have_hands"] = true
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("HandCarrier")
+		player_api.set_model(player, "character.glb")
+
+		core.register_entity("i_have_hands:held", {})
+
+		-- Initially not carrying
+		assert.is_false(x_player_bridge.is_carrying_block(player))
+		local pstate = x_player_api.get_player_state(player)
+		assert.is_nil(pstate.action)
+
+		-- Attach i_have_hands:held entity
+		local held = core.add_entity(player:get_pos(), "i_have_hands:held")
+		held:set_attach(player, "Body", {x = 0, y = 4, z = -3.4}, {x = 0, y = math.rad(90), z = 0})
+
+		assert.is_true(x_player_bridge.is_carrying_block(player))
+		pstate = x_player_api.get_player_state(player)
+		assert.equal("carry", pstate.action)
+	end)
+
+	it("applies correct dual-arm bone overrides with GLB and B3D coordinate parity", function()
+		reset_bridge_env()
+		core._enabled_mods["i_have_hands"] = true
+		core.register_entity("i_have_hands:held", {})
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("DualArmCarrier")
+		player_api.set_model(player, "character.glb")
+
+		local held = core.add_entity(player:get_pos(), "i_have_hands:held")
+		held:set_attach(player, "Body", {x = 0, y = 4, z = -3.4}, {x = 0, y = math.rad(90), z = 0})
+
+		-- Step head tracking while carrying
+		local sem_state = x_player_api.get_player_state(player)
+		x_player_api.step_head_tracking(player, 0.05, sem_state)
+
+		local proxies = x_player_api.get_visual_proxies(player)
+		assert.is_not_nil(proxies)
+
+		-- Verify GLB proxy bone overrides (Positive X elevates forward)
+		local glb_r = proxies.glb:get_bone_override("Arm_Right")
+		local glb_l = proxies.glb:get_bone_override("Arm_Left")
+		assert.is_not_nil(glb_r)
+		assert.is_not_nil(glb_l)
+		assert.is_true(glb_r.rotation.absolute, "GLB right arm must be absolute to lock gait swinging")
+		assert.is_true(glb_l.rotation.absolute, "GLB left arm must be absolute to lock gait swinging")
+		assert.near(math.rad(28),  glb_r.rotation.vec.x, 0.01, "GLB right arm elevates forward (+X)")
+		assert.near(-math.rad(4),  glb_r.rotation.vec.y, 0.01, "GLB right arm wide opening yaw (-Y)")
+		assert.near(math.rad(6),   glb_r.rotation.vec.z, 0.01, "GLB right arm rolls palm inward (+Z)")
+		assert.near(math.rad(28),  glb_l.rotation.vec.x, 0.01, "GLB left arm elevates forward (+X)")
+		assert.near(math.rad(4),   glb_l.rotation.vec.y, 0.01, "GLB left arm wide opening yaw (+Y)")
+		assert.near(-math.rad(6),  glb_l.rotation.vec.z, 0.01, "GLB left arm rolls palm inward (-Z)")
+
+		-- Verify B3D proxy bone overrides (Negative X elevates forward, matching wider opening)
+		local b3d_r = proxies.b3d:get_bone_override("Arm_Right")
+		local b3d_l = proxies.b3d:get_bone_override("Arm_Left")
+		assert.is_not_nil(b3d_r)
+		assert.is_not_nil(b3d_l)
+		assert.is_true(b3d_r.rotation.absolute, "B3D right arm must be absolute to lock gait swinging")
+		assert.is_true(b3d_l.rotation.absolute, "B3D left arm must be absolute to lock gait swinging")
+		assert.near(-math.rad(28), b3d_r.rotation.vec.x, 0.01, "B3D right arm elevates forward (-X)")
+		assert.near(-math.rad(4),  b3d_r.rotation.vec.y, 0.01, "B3D right arm matches wider GLB opening (-Y)")
+		assert.near(math.rad(6),   b3d_r.rotation.vec.z, 0.01, "B3D right arm rolls palm inward (+Z)")
+		assert.near(-math.rad(28), b3d_l.rotation.vec.x, 0.01, "B3D left arm elevates forward (-X)")
+		assert.near(math.rad(4),   b3d_l.rotation.vec.y, 0.01, "B3D left arm matches wider GLB opening (+Y)")
+		assert.near(-math.rad(6),  b3d_l.rotation.vec.z, 0.01, "B3D left arm rolls palm inward (-Z)")
+
+		-- Detach held entity (simulating placing down the container)
+		held:set_detach()
+		assert.is_false(x_player_bridge.is_carrying_block(player))
+
+		-- Step head tracking after placing down: arms smoothly reset to 0
+		x_player_api.step_head_tracking(player, 0.05, sem_state)
+		local reset_r = proxies.glb:get_bone_override("Arm_Right")
+		local reset_l = proxies.glb:get_bone_override("Arm_Left")
+		assert.near(0, reset_r.rotation.vec.x, 0.01)
+		assert.near(0, reset_r.rotation.vec.y, 0.01)
+		assert.near(0, reset_r.rotation.vec.z, 0.01)
+		assert.near(0, reset_l.rotation.vec.x, 0.01)
+		assert.near(0, reset_l.rotation.vec.y, 0.01)
+		assert.near(0, reset_l.rotation.vec.z, 0.01)
+	end)
+
+	it("cleans up carrying state on player death, respawn, and leave", function()
+		reset_bridge_env()
+		core._enabled_mods["i_have_hands"] = true
+		core.register_entity("i_have_hands:held", {})
+
+		dofile("init.lua")
+
+		local player = mock_env.join_player("MortalCarrier")
+		player_api.set_model(player, "character.glb")
+
+		local held = core.add_entity(player:get_pos(), "i_have_hands:held")
+		held:set_attach(player, "Body", {x = 0, y = 4, z = -3.4}, {x = 0, y = math.rad(90), z = 0})
+
+		local sem_state = x_player_api.get_player_state(player)
+		x_player_api.step_head_tracking(player, 0.05, sem_state)
+
+		local proxies = x_player_api.get_visual_proxies(player)
+		local glb_r = proxies.glb:get_bone_override("Arm_Right")
+		assert.near(math.rad(28), glb_r.rotation.vec.x, 0.01)
+
+		-- Simulate player death
+		local mod_def = x_player_bridge.get_module("i_have_hands")
+		mod_def:on_dieplayer(player)
+
+		local dead_r = proxies.glb:get_bone_override("Arm_Right")
+		assert.near(0, dead_r.rotation.vec.x, 0.01, "Death must reset arm overrides")
+
+		-- Simulate respawn
+		mod_def:on_respawnplayer(player)
+		local respawn_r = proxies.glb:get_bone_override("Arm_Right")
+		assert.near(0, respawn_r.rotation.vec.x, 0.01, "Respawn must reset arm overrides")
+
+		-- Simulate leave
+		mod_def:on_leaveplayer(player)
+	end)
+
+	it("skips i_have_hands integration when setting is disabled", function()
+		reset_bridge_env()
+		core._enabled_mods["i_have_hands"] = true
+		core.settings:set_bool("x_player_bridge.enable_i_have_hands", false)
+
+		dofile("init.lua")
+
+		assert.is_false(x_player_bridge.is_module_active("i_have_hands"))
 	end)
 
 	-- Restore original environment

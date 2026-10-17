@@ -47,6 +47,7 @@ Because legacy ecosystem mods historically assume hardcoded `.b3d` meshes and si
 ### Wield & Items
 * **Wieldview (`wield/wieldview.lua`)**: When `x_player_api.enable_wield_item = true`, automatically suppresses legacy 2D hand texture compositing on the player model to eliminate z-fighting, flickering, and duplicate rendered items. Dynamically re-enables 2D compositing if 3D wield items are toggled off in settings.
 * **Wield3D & Visible Wielditem (`wield/wield3d.lua`)**: Coordinates with external 3D wield item entities (`wield3d`, `visible_wielditem`), suppressing redundant external attachment entities when `x_player_api` native 3D wield items are active.
+* **I Have Hands (`wield/i_have_hands.lua`)**: Bridges KingTheGuy's `i_have_hands` container carrying mechanics. Integrates semantic `carry` action evaluation and sets calibrated dual-arm bone overrides (`absolute = true`, elevation pitch, inward yaw, and palm roll) to lift hands up in front of the body holding chests and storage blocks across both GLB and B3D models without gait arm swinging.
 
 ### Appearance & Skins
 * **SkinsDB (`appearance/skinsdb.lua`)**: Registers dedicated `skinsdb_3d_armor_character_5.b3d` and `skinsdb_3d_armor_character_5.glb` dual-format models with all 29 athletic animations from `x_player_api`. Fully supports modern 1.8 skins with 3D outer layers (jackets, sleeves, pants) alongside 1.0 skins, capes, clothing overlays, and 3D armor by preserving the native 4-slot texture architecture. When non-skinsdb models are used, seamlessly falls back to canonical 3-slot texture normalization.
@@ -88,6 +89,7 @@ Each integration can be independently enabled or disabled via the in-game Settin
 | `x_player_bridge.enable_shields` | bool | `true` | Enable `shields` defensive blocking action mapping |
 | `x_player_bridge.enable_wieldview` | bool | `true` | Enable `wieldview` 2D compositing suppression hook |
 | `x_player_bridge.enable_wield3d` | bool | `true` | Enable `wield3d` and `visible_wielditem` external entity suppression |
+| `x_player_bridge.enable_i_have_hands` | bool | `true` | Enable `i_have_hands` container carrying posture and dual-model synchronization |
 | `x_player_bridge.enable_skinsdb` | bool | `true` | Enable `skinsdb` 1.8 3D custom model and 4-slot texture integration |
 | `x_player_bridge.enable_simple_skins` | bool | `true` | Enable `simple_skins` proxy texture synchronization |
 | `x_player_bridge.enable_clothing` | bool | `true` | Enable `clothing` proxy layer synchronization |

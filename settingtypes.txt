@@ -5,6 +5,7 @@ x_player_bridge.enable_3d_armor (Enable 3D Armor dual-model integration) bool tr
 x_player_bridge.enable_shields (Enable Shields defense block posture integration) bool true
 x_player_bridge.enable_wieldview (Enable Wieldview 2D hand texture suppression) bool true
 x_player_bridge.enable_wield3d (Enable Wield3D and visible_wielditem suppression) bool true
+x_player_bridge.enable_i_have_hands (Enable I Have Hands container carrying posture and dual-model synchronization) bool true
 
 # Appearance & Skins
 x_player_bridge.enable_skinsdb (Enable SkinsDB model redirect integration) bool true
