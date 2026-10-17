@@ -13,6 +13,7 @@ globals = {
 	"hangglider",
 	"emote",
 	"bows",
+	"I_have_hands",
 }
 read_globals = {
 	"ItemStack",

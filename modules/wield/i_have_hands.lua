@@ -28,8 +28,9 @@ local function is_carrying_block(player)
 		return false
 	end
 	local name = player:get_player_name()
-	if I_have_hands and I_have_hands.Player_data then
-		local p_data = I_have_hands.Player_data[name]
+	local i_hands = rawget(_G, "I_have_hands")
+	if i_hands and i_hands.Player_data then
+		local p_data = i_hands.Player_data[name]
 		if p_data and p_data.held then
 			return true
 		end
